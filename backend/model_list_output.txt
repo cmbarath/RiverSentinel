@@ -1,0 +1,76 @@
+Listing all models safely:
+MODEL: models/gemini-2.5-flash
+  - Supports generateContent
+MODEL: models/gemini-2.5-pro
+  - Supports generateContent
+MODEL: models/gemini-2.0-flash
+  - Supports generateContent
+MODEL: models/gemini-2.0-flash-001
+  - Supports generateContent
+MODEL: models/gemini-2.0-flash-exp-image-generation
+  - Supports generateContent
+MODEL: models/gemini-2.0-flash-lite-001
+  - Supports generateContent
+MODEL: models/gemini-2.0-flash-lite
+  - Supports generateContent
+MODEL: models/gemini-exp-1206
+  - Supports generateContent
+MODEL: models/gemini-2.5-flash-preview-tts
+  - Supports generateContent
+MODEL: models/gemini-2.5-pro-preview-tts
+  - Supports generateContent
+MODEL: models/gemma-3-1b-it
+  - Supports generateContent
+MODEL: models/gemma-3-4b-it
+  - Supports generateContent
+MODEL: models/gemma-3-12b-it
+  - Supports generateContent
+MODEL: models/gemma-3-27b-it
+  - Supports generateContent
+MODEL: models/gemma-3n-e4b-it
+  - Supports generateContent
+MODEL: models/gemma-3n-e2b-it
+  - Supports generateContent
+MODEL: models/gemini-flash-latest
+  - Supports generateContent
+MODEL: models/gemini-flash-lite-latest
+  - Supports generateContent
+MODEL: models/gemini-pro-latest
+  - Supports generateContent
+MODEL: models/gemini-2.5-flash-lite
+  - Supports generateContent
+MODEL: models/gemini-2.5-flash-image
+  - Supports generateContent
+MODEL: models/gemini-2.5-flash-preview-09-2025
+  - Supports generateContent
+MODEL: models/gemini-2.5-flash-lite-preview-09-2025
+  - Supports generateContent
+MODEL: models/gemini-3-pro-preview
+  - Supports generateContent
+MODEL: models/gemini-3-flash-preview
+  - Supports generateContent
+MODEL: models/gemini-3-pro-image-preview
+  - Supports generateContent
+MODEL: models/nano-banana-pro-preview
+  - Supports generateContent
+MODEL: models/gemini-robotics-er-1.5-preview
+  - Supports generateContent
+MODEL: models/gemini-2.5-computer-use-preview-10-2025
+  - Supports generateContent
+MODEL: models/deep-research-pro-preview-12-2025
+  - Supports generateContent
+MODEL: models/gemini-embedding-001
+MODEL: models/aqa
+MODEL: models/imagen-4.0-generate-preview-06-06
+MODEL: models/imagen-4.0-ultra-generate-preview-06-06
+MODEL: models/imagen-4.0-generate-001
+MODEL: models/imagen-4.0-ultra-generate-001
+MODEL: models/imagen-4.0-fast-generate-001
+MODEL: models/veo-2.0-generate-001
+MODEL: models/veo-3.0-generate-001
+MODEL: models/veo-3.0-fast-generate-001
+MODEL: models/veo-3.1-generate-preview
+MODEL: models/veo-3.1-fast-generate-preview
+MODEL: models/gemini-2.5-flash-native-audio-latest
+MODEL: models/gemini-2.5-flash-native-audio-preview-09-2025
+MODEL: models/gemini-2.5-flash-native-audio-preview-12-2025

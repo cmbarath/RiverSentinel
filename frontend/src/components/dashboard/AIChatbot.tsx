@@ -1,0 +1,266 @@
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+
+const AIChatbot = () => {
+    const [language, setLanguage] = useState("English");
+    const [isListening, setIsListening] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [speakingMessageIndex, setSpeakingMessageIndex] = useState<number | null>(null);
+
+    // Language-specific greeting messages
+    const greetings = {
+        "English": "Namaste! I am your RiverSentinel AI Assistant. How can I help you today with Ganga's water quality or safety?",
+        "हिन्दी": "नमस्ते! मैं आपका RiverSentinel AI सहायक हूं। मैं आज गंगा की जल गुणवत्ता या सुरक्षा के बारे में आपकी कैसे मदद कर सकता हूं?",
+        "भोजपुरी": "प्रणाम! हम रउरा RiverSentinel AI सहायक बानी। आज गंगा के पानी के गुणवत्ता भा सुरक्षा के बारे में हम रउरा के कइसे मदद कर सकीलें?",
+        "বাংলা": "নমস্কার! আমি আপনার RiverSentinel AI সহায়ক। আজ গঙ্গার জলের গুণমান বা সুরক্ষা সম্পর্কে আমি কীভাবে আপনাকে সাহায্য করতে পারি?"
+    };
+
+    // Language codes for speech recognition
+    const languageCodes: { [key: string]: string } = {
+        "English": "en-US",
+        "हिन्दी": "hi-IN",
+        "भोजपुरी": "hi-IN",  // Use Hindi for Bhojpuri
+        "বাংলা": "bn-IN"
+    };
+
+    const [messages, setMessages] = useState([
+        { role: "bot", text: greetings["English"] }
+    ]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const recognitionRef = useRef<any>(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(scrollToBottom, [messages]);
+
+    // Update greeting when language changes
+    useEffect(() => {
+        setMessages([{ role: "bot", text: greetings[language] }]);
+    }, [language]);
+
+    // Initialize speech recognition
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognitionRef.current = new SpeechRecognition();
+                recognitionRef.current.continuous = false;
+                recognitionRef.current.interimResults = false;
+
+                recognitionRef.current.onresult = (event: any) => {
+                    const transcript = event.results[0][0].transcript;
+                    setInput(transcript);
+                    setIsListening(false);
+                };
+
+                recognitionRef.current.onerror = (event: any) => {
+                    console.error('Speech recognition error:', event.error);
+                    setIsListening(false);
+                };
+
+                recognitionRef.current.onend = () => {
+                    setIsListening(false);
+                };
+            }
+        }
+    }, []);
+
+    // Update recognition language when language changes
+    useEffect(() => {
+        if (recognitionRef.current) {
+            recognitionRef.current.lang = languageCodes[language];
+        }
+    }, [language]);
+
+    const handleSend = () => {
+        if (!input.trim()) return;
+
+        const userMsg = { role: "user", text: input };
+        setMessages(prev => [...prev, userMsg]);
+        const currentInput = input;
+        setInput("");
+        setLoading(true);
+
+        // Call real AI backend with language parameter
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/ai/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: currentInput, language: language })
+        })
+            .then(res => res.json())
+            .then(data => {
+                setMessages(prev => [...prev, { role: "bot", text: data.response }]);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setMessages(prev => [...prev, { role: "bot", text: "I'm having trouble connecting to my brain. Please try again later." }]);
+                setLoading(false);
+            });
+    };
+
+    const toggleListening = () => {
+        if (!recognitionRef.current) {
+            alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        } else {
+            recognitionRef.current.start();
+            setIsListening(true);
+        }
+    };
+
+    const speakText = (text: string, index: number) => {
+        if (typeof window === 'undefined') return;
+
+        const synthesis = window.speechSynthesis;
+
+        // Stop any ongoing speech
+        if (isSpeaking) {
+            synthesis.cancel();
+            setIsSpeaking(false);
+            setSpeakingMessageIndex(null);
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = languageCodes[language];
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+
+        utterance.onstart = () => {
+            setIsSpeaking(true);
+            setSpeakingMessageIndex(index);
+        };
+
+        utterance.onend = () => {
+            setIsSpeaking(false);
+            setSpeakingMessageIndex(null);
+        };
+
+        utterance.onerror = () => {
+            setIsSpeaking(false);
+            setSpeakingMessageIndex(null);
+        };
+
+        synthesis.speak(utterance);
+    };
+
+    return (
+        <div className="card" style={{ height: '70vh', padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <span style={{ fontSize: '2rem' }}>🤖</span>
+                    <div>
+                        <h3 style={{ margin: 0 }}>Ganga Sentinel AI</h3>
+                        <div style={{ fontSize: '0.8rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div> Online
+                        </div>
+                    </div>
+                </div>
+                <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.8rem' }}
+                >
+                    <option value="English">English</option>
+                    <option value="हिन्दी">हिन्दी</option>
+                    <option value="भोजपुरी">भोजपुरी</option>
+                    <option value="বাংলা">বাংলা</option>
+                </select>
+            </div>
+
+            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {messages.map((m, i) => (
+                    <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                        <div style={{ padding: '1rem', borderRadius: '1rem', background: m.role === 'user' ? 'var(--primary)' : '#f1f5f9', color: m.role === 'user' ? 'white' : 'inherit', borderBottomRightRadius: m.role === 'user' ? '0' : '1rem', borderBottomLeftRadius: m.role === 'user' ? '1rem' : '0', flex: 1 }}>
+                            {m.text}
+                        </div>
+                        {m.role === 'bot' && (
+                            <button
+                                onClick={() => speakText(m.text, i)}
+                                style={{
+                                    background: speakingMessageIndex === i ? 'var(--primary)' : '#e2e8f0',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    cursor: 'pointer',
+                                    fontSize: '1.2rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s',
+                                    animation: speakingMessageIndex === i ? 'pulse 1s infinite' : 'none'
+                                }}
+                                title="Listen to response"
+                            >
+                                {speakingMessageIndex === i ? '⏸️' : '🔊'}
+                            </button>
+                        )}
+                    </div>
+                ))}
+                {loading && (
+                    <div style={{ alignSelf: 'flex-start', padding: '1rem', borderRadius: '1rem', background: '#f1f5f9' }}>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            <div className="dot" style={{ width: '6px', height: '6px', background: '#94a3b8', borderRadius: '50%', animation: 'bounce 1s infinite' }}></div>
+                            <div className="dot" style={{ width: '6px', height: '6px', background: '#94a3b8', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }}></div>
+                            <div className="dot" style={{ width: '6px', height: '6px', background: '#94a3b8', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }}></div>
+                        </div>
+                        <style>{`@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }`}</style>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+
+            <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                    onClick={toggleListening}
+                    style={{
+                        background: isListening ? '#ef4444' : '#e2e8f0',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '45px',
+                        height: '45px',
+                        cursor: 'pointer',
+                        fontSize: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        animation: isListening ? 'pulse 1s infinite' : 'none'
+                    }}
+                    title={isListening ? "Stop listening" : "Click to speak"}
+                >
+                    🎤
+                </button>
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                    placeholder={isListening ? "Listening..." : "Ask about water quality, flood risk, or safety..."}
+                    style={{ flex: 1, padding: '0.75rem 1.5rem', borderRadius: '999px', border: '1px solid var(--border)', outline: 'none' }}
+                />
+                <button onClick={handleSend} className="btn btn-primary" style={{ padding: '0.75rem', borderRadius: '50%', width: '45px', height: '45px' }}>➤</button>
+            </div>
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.1); opacity: 0.8; }
+                }
+            `}</style>
+        </div>
+    );
+};
+
+export default AIChatbot;

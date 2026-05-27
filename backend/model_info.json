@@ -1,0 +1,20 @@
+{
+  "features": [
+    "water_level_varanasi",
+    "discharge_cumec",
+    "rain_varanasi_mm",
+    "rain_upstream_avg_mm",
+    "temperature_c",
+    "humidity_pct"
+  ],
+  "feature_importance": {
+    "water_level_varanasi": 0.07062345518284958,
+    "discharge_cumec": 0.1838001493457897,
+    "rain_varanasi_mm": 0.3996250032355182,
+    "rain_upstream_avg_mm": 0.33604808273540604,
+    "temperature_c": 0.00477374410167444,
+    "humidity_pct": 0.005129565398762042
+  },
+  "accuracy": 0.9954337899543378,
+  "roc_auc": 1.0
+}
