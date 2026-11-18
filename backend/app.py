@@ -183,8 +183,77 @@ def safe_db_update(node_path, data):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Supabase Helper Utilities
+# ---------------------------------------------------------------------------
+def _supabase_headers():
+    key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('SUPABASE_KEY')
+    if not key:
+        return None
+    return {
+        'apikey': key,
+        'Authorization': f'Bearer {key}',
+        'Content-Type': 'application/json'
+    }
+
+
+def safe_supabase_insert(table_name, record):
+    """Insert a record into a Supabase table."""
+    base_url = os.getenv('SUPABASE_URL')
+    headers = _supabase_headers()
+    if not base_url or not headers:
+        return None
+    try:
+        url = f"{base_url.rstrip('/')}/rest/v1/{table_name}"
+        post_headers = {**headers, 'Prefer': 'return=representation'}
+        r = requests.post(url, headers=post_headers, json=record, timeout=3.0)
+        if r.status_code in (200, 201):
+            return r.json()
+        print(f"[WARNING] Supabase insert to {table_name} status {r.status_code}: {r.text[:200]}")
+    except Exception as e:
+        print(f"[WARNING] Supabase insert failed: {e}")
+    return None
+
+
+def safe_supabase_get(table_name, select="*", order=None, limit=None):
+    """Query records from a Supabase table."""
+    base_url = os.getenv('SUPABASE_URL')
+    headers = _supabase_headers()
+    if not base_url or not headers:
+        return None
+    try:
+        url = f"{base_url.rstrip('/')}/rest/v1/{table_name}?select={select}"
+        if order:
+            url += f"&order={order}"
+        if limit:
+            url += f"&limit={limit}"
+        r = requests.get(url, headers=headers, timeout=2.5)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"[WARNING] Supabase query on {table_name} failed: {e}")
+    return None
+
+
+def _get_latest_sensor_from_supabase():
+    """Fetch latest sensor reading from Supabase sensor_readings table."""
+    try:
+        rows = safe_supabase_get('sensor_readings', order='created_at.desc', limit=1)
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            return rows[0]
+    except Exception as e:
+        print(f"[WARNING] Could not fetch sensor reading from Supabase: {e}")
+    return None
+
+
 def _get_latest_sensor_from_firebase():
-    """Return latest sensor reading dict from Firebase, or None."""
+    """Return latest sensor reading dict from Supabase (primary) or Firebase (fallback), or None."""
+    # 1. Try Supabase first
+    sb_reading = _get_latest_sensor_from_supabase()
+    if sb_reading:
+        return sb_reading
+
+    # 2. Fallback to Firebase
     try:
         snapshot = safe_db_get('sensor_data')
         if snapshot and isinstance(snapshot, dict):
@@ -441,6 +510,21 @@ def predict_flood_risk():
         reasons.append(f"High discharge ({discharge:.0f} cumec)")
     if not reasons:
         reasons.append("All parameters within normal range")
+
+    # Record prediction in Supabase asynchronously / safely
+    try:
+        safe_supabase_insert('flood_predictions', {
+            'risk_level': risk_level,
+            'flood_probability': round(flood_prob * 100, 2),
+            'water_level': round(water_level, 2),
+            'discharge': round(discharge, 2),
+            'rain_varanasi': round(rain_varanasi, 2),
+            'rain_upstream': round(rain_upstream, 2),
+            'message': message,
+            'reasons': reasons
+        })
+    except Exception:
+        pass
 
     return jsonify({
         'prediction':        'FLOOD' if prediction_bin == 1 else 'NO_FLOOD',
@@ -781,9 +865,18 @@ def analyze_image():
 
         result = json.loads(raw)
 
-        # Persist to Firebase
+        # Persist to Supabase and Firebase
         try:
             ts = int(time.time() * 1000)
+            safe_supabase_insert('pollution_reports', {
+                'pollution_level': result.get('pollution_level', 'Moderate'),
+                'pollutants': result.get('pollutants', []),
+                'assessment': result.get('assessment', ''),
+                'description': f"AI-assisted image evaluation (confidence: {result.get('confidence', 75)}%)",
+                'location_name': 'Ganga River',
+                'reporter': 'Citizen AI',
+                'status': 'PENDING'
+            })
             safe_db_push('analysis_history', {
                 **result,
                 'timestamp': ts,
@@ -793,7 +886,7 @@ def analyze_image():
                 'reporter':  'Citizen AI'
             })
         except Exception as fe:
-            print(f"[WARNING] Firebase save failed: {fe}")
+            print(f"[WARNING] Report persistence failed: {fe}")
 
         return jsonify(result)
 
@@ -914,6 +1007,28 @@ def get_reports():
          'timestamp': int(time.time() * 1000) - 3600000,
          'assessment': 'Plastic waste at riverbank.'}
     ]
+    # 1. Try Supabase pollution_reports
+    try:
+        sb_reports = safe_supabase_get('pollution_reports', order='created_at.desc', limit=50)
+        if sb_reports and isinstance(sb_reports, list) and len(sb_reports) > 0:
+            formatted = []
+            for row in sb_reports:
+                formatted.append({
+                    'id': str(row.get('id', '')),
+                    'location': row.get('location_name', 'Ganga River'),
+                    'reporter': row.get('reporter', 'Citizen AI'),
+                    'pollution_level': row.get('pollution_level', 'Moderate'),
+                    'status': row.get('status', 'PENDING'),
+                    'timestamp': int(datetime.fromisoformat(row['created_at'].replace('Z', '+00:00')).timestamp() * 1000) if row.get('created_at') else int(time.time() * 1000),
+                    'assessment': row.get('assessment', '') or row.get('description', ''),
+                    'confidence': 85.0,
+                    'pollutants': row.get('pollutants', [])
+                })
+            return jsonify(formatted)
+    except Exception as sbe:
+        print(f"[WARNING] Supabase reports fetch failed: {sbe}")
+
+    # 2. Try Firebase fallback
     try:
         reports_dict = safe_db_get('analysis_history')
         if not reports_dict:
@@ -946,6 +1061,18 @@ def update_report_status():
     new_status = data.get('status')
     if not report_id or not new_status:
         return jsonify({'status': 'error', 'message': 'Missing reportId or status'}), 400
+
+    # Try updating Supabase if numeric ID
+    base_url = os.getenv('SUPABASE_URL')
+    headers = _supabase_headers()
+    if base_url and headers and str(report_id).isdigit():
+        try:
+            patch_url = f"{base_url.rstrip('/')}/rest/v1/pollution_reports?id=eq.{report_id}"
+            requests.patch(patch_url, headers=headers, json={'status': new_status}, timeout=3.0)
+        except Exception as e:
+            print(f"[WARNING] Supabase report update failed: {e}")
+
+    # Also update Firebase fallback
     safe_db_update(f'analysis_history/{report_id}', {'status': new_status})
     return jsonify({
         'status':    'success',
@@ -957,9 +1084,23 @@ def update_report_status():
 @app.route('/api/reports/submit', methods=['POST'])
 def submit_full_report():
     data = request.get_json(silent=True) or {}
+    ts = int(time.time() * 1000)
+
+    # Supabase insert
+    safe_supabase_insert('pollution_reports', {
+        'pollution_level': data.get('pollution_level', 'Moderate'),
+        'pollutants': data.get('pollutants', []),
+        'assessment': data.get('assessment', ''),
+        'description': data.get('description', ''),
+        'location_name': data.get('location', data.get('location_name', 'Ganga River')),
+        'reporter': data.get('reporter', 'Citizen User'),
+        'status': 'PENDING'
+    })
+
+    # Firebase insert fallback
     safe_db_push('analysis_history', {
         **data,
-        'timestamp': int(time.time() * 1000),
+        'timestamp': ts,
         'status':    'PENDING'
     })
     return jsonify({'status': 'success', 'message': 'Report submitted successfully'})
