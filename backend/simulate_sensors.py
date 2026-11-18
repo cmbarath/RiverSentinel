@@ -12,10 +12,15 @@ load_dotenv()
 FIREBASE_URL = os.getenv('FIREBASE_DATABASE_URL')
 FIREBASE_SECRET = os.getenv('FIREBASE_SECRET')
 
-if not FIREBASE_URL or not FIREBASE_SECRET:
-    print("❌ Error: Missing Firebase configuration in .env")
-    print("Please ensure FIREBASE_DATABASE_URL and FIREBASE_SECRET are set.")
+if not FIREBASE_URL:
+    print("[ERROR] Missing FIREBASE_DATABASE_URL in .env")
     exit(1)
+
+FIREBASE_URL = FIREBASE_URL.rstrip('/')
+if FIREBASE_SECRET:
+    auth_query = f"?auth={FIREBASE_SECRET}"
+else:
+    auth_query = ""
 
 print(f"🌊 Starting River Sentinel Sensor Simulation...")
 print(f"target: {FIREBASE_URL}")
@@ -59,9 +64,9 @@ def push_to_firebase(data):
         
         # We'll use the timestamp as the key
         key = str(data['timestamp'])
-        update_url = f"{FIREBASE_URL}/sensor_data/{key}.json?auth={FIREBASE_SECRET}"
+        update_url = f"{FIREBASE_URL}/sensor_data/{key}.json{auth_query}"
         
-        response = requests.put(update_url, json=data)
+        response = requests.put(update_url, json=data, timeout=5)
         
         if response.status_code == 200:
             print(f"✅ Data pushed: pH={data['ph']} | WL={data['water_level']}m | Temp={data['temperature']}°C")

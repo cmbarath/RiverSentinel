@@ -17,7 +17,7 @@ const WaterQuality = () => {
         { label: 'Water Level', value: readings.water_level.toFixed(2), unit: 'm', status: readings.water_level_error ? 'Error' : readings.water_level > 70 ? 'High' : 'Normal', color: readings.water_level_error ? '#ef4444' : readings.water_level > 70 ? '#f59e0b' : '#8b5cf6' },
     ];
 
-    const getBadgeColor = (status) => {
+    const getBadgeColor = (status: string) => {
         switch (status.toLowerCase()) {
             case 'good':
             case 'excellent':

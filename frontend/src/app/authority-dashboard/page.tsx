@@ -32,7 +32,6 @@ export default function AuthorityDashboard() {
             case "live": return <LiveSensorData />;
             case "map": return <FloodMapViewer />; // Replaced InteractiveMap with FloodMapViewer as requested
             case "upload": return <DatasetUpload />;
-            case "upload": return <DatasetUpload />;
             case "manage": return <ManageReports />;
             case "analytics": return <AuthorityAnalytics />;
             case "generate": return <GenerateReports />;

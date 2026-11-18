@@ -1,0 +1,26 @@
+{
+  "model_type": "RandomForestClassifier",
+  "features": [
+    "ph",
+    "turbidity",
+    "temperature",
+    "ec",
+    "do"
+  ],
+  "n_features": 5,
+  "target": "potable (1=safe, 0=unsafe)",
+  "n_estimators": 200,
+  "accuracy": 1.0,
+  "roc_auc": 1.0,
+  "train_samples": 1600,
+  "test_samples": 400,
+  "feature_importance": {
+    "ph": 0.0701,
+    "turbidity": 0.2561,
+    "temperature": 0.0,
+    "ec": 0.3115,
+    "do": 0.3623
+  },
+  "data_source": "synthetic (WHO/BIS-based realistic sensor ranges)",
+  "note": "Retrained to fix sklearn version incompatibility in original model."
+}

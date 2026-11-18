@@ -1,6 +1,12 @@
 """
-Flood Prediction Model Training Script
-Trains a Random Forest classifier on flood data and saves the model for real-time predictions
+Flood Prediction Model Training Script (Fixed)
+================================================
+Trains a Random Forest classifier using the existing flood dataset.
+Features: water_level_varanasi, discharge_cumec, rain_varanasi_mm,
+          rain_upstream_avg_mm, temperature_c, humidity_pct
+Target: flood_label (1=flood, 0=no flood)
+
+The model is saved to backend/flood_model.pkl and backend/flood_scaler.pkl.
 """
 
 import pandas as pd
@@ -8,21 +14,40 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, roc_auc_score
+from sklearn.metrics import (
+    classification_report, confusion_matrix,
+    accuracy_score, roc_auc_score
+)
 import joblib
+import json
 import os
+import warnings
 
-# Load the dataset
-print("[INFO] Loading flood dataset...")
-data_path = r'c:\Users\cmbar\OneDrive\Desktop\Projects\river-sentinel_antigravity\river-sentinel\flood_backend (1)\flood_backend\flood_data_with_dynamic_labels.csv'
+warnings.filterwarnings('ignore')
+
+print("=" * 60)
+print("FLOOD PREDICTION MODEL TRAINING")
+print("=" * 60)
+
+# Resolve dataset path relative to this script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_path = os.path.join(script_dir, 'flood_model', 'flood_data_with_dynamic_labels.csv')
+
+if not os.path.exists(data_path):
+    raise FileNotFoundError(
+        f"Flood dataset not found at: {data_path}\n"
+        "Ensure flood_data_with_dynamic_labels.csv is in the flood_model/ subfolder."
+    )
+
+print(f"\n[INFO] Loading dataset from: {data_path}")
 df = pd.read_csv(data_path)
 
 print(f"[INFO] Dataset shape: {df.shape}")
+print(f"[INFO] Columns: {list(df.columns)}")
 print(f"[INFO] Target distribution:\n{df['flood_label'].value_counts()}")
 
-# Select features for training
-# Exclude: date, flood_label (target), and static basin characteristics that don't change
-feature_columns = [
+# Feature selection – these 6 are available from real-time sensors + weather API
+FEATURE_COLS = [
     'water_level_varanasi',
     'discharge_cumec',
     'rain_varanasi_mm',
@@ -31,99 +56,108 @@ feature_columns = [
     'humidity_pct'
 ]
 
-X = df[feature_columns]
+# Verify all features exist
+missing = [c for c in FEATURE_COLS if c not in df.columns]
+if missing:
+    raise ValueError(f"Missing columns in dataset: {missing}")
+
+X = df[FEATURE_COLS]
 y = df['flood_label']
 
-print(f"\n[INFO] Features used: {feature_columns}")
+print(f"\n[INFO] Features used: {FEATURE_COLS}")
 print(f"[INFO] Feature matrix shape: {X.shape}")
+print(f"\n[INFO] Checking for missing values:")
+print(X.isnull().sum())
 
-# Split the data
+# Drop any rows with NaN
+X = X.dropna()
+y = y[X.index]
+
+# Train/test split with stratification
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
+print(f"\n[INFO] Train: {X_train.shape[0]} samples")
+print(f"[INFO] Test:  {X_test.shape[0]} samples")
 
-print(f"\n[INFO] Training set: {X_train.shape[0]} samples")
-print(f"[INFO] Test set: {X_test.shape[0]} samples")
-
-# Scale the features
-print("\n[INFO] Scaling features...")
+# Feature scaling
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+X_test_scaled  = scaler.transform(X_test)
 
-# Train Random Forest model
+# Train Random Forest
 print("\n[INFO] Training Random Forest model...")
-rf_model = RandomForestClassifier(
+model = RandomForestClassifier(
     n_estimators=200,
     max_depth=15,
     min_samples_split=5,
     min_samples_leaf=2,
+    class_weight='balanced',
     random_state=42,
-    n_jobs=-1,
-    class_weight='balanced'  # Handle class imbalance
+    n_jobs=-1
 )
+model.fit(X_train_scaled, y_train)
 
-rf_model.fit(X_train_scaled, y_train)
-
-# Evaluate the model
-print("\n[INFO] Evaluating model...")
-y_pred = rf_model.predict(X_test_scaled)
-y_pred_proba = rf_model.predict_proba(X_test_scaled)[:, 1]
+# Evaluate
+y_pred = model.predict(X_test_scaled)
+y_prob = model.predict_proba(X_test_scaled)[:, 1]
 
 accuracy = accuracy_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_pred_proba)
+roc_auc  = roc_auc_score(y_test, y_prob)
 
 print(f"\n{'='*60}")
-print(f"MODEL PERFORMANCE")
+print("MODEL PERFORMANCE")
 print(f"{'='*60}")
-print(f"Accuracy: {accuracy:.4f}")
-print(f"ROC-AUC Score: {roc_auc:.4f}")
-
+print(f"Accuracy :  {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"ROC-AUC  :  {roc_auc:.4f}")
 print(f"\nConfusion Matrix:")
 print(confusion_matrix(y_test, y_pred))
-
 print(f"\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=['No Flood', 'Flood']))
 
 # Feature importance
-print(f"\n{'='*60}")
-print(f"FEATURE IMPORTANCE")
-print(f"{'='*60}")
-feature_importance = pd.DataFrame({
-    'feature': feature_columns,
-    'importance': rf_model.feature_importances_
+fi = pd.DataFrame({
+    'feature':    FEATURE_COLS,
+    'importance': model.feature_importances_
 }).sort_values('importance', ascending=False)
+print(f"\n{'='*60}")
+print("FEATURE IMPORTANCE")
+print(f"{'='*60}")
+for _, row in fi.iterrows():
+    print(f"  {row['feature']:30s}: {row['importance']:.4f}")
 
-for idx, row in feature_importance.iterrows():
-    print(f"{row['feature']:30s}: {row['importance']:.4f}")
+# Save model and scaler to backend root (used by app.py GET /api/flood/predict)
+model_path  = os.path.join(script_dir, 'flood_model.pkl')
+scaler_path = os.path.join(script_dir, 'flood_scaler.pkl')
+info_path   = os.path.join(script_dir, 'model_info.json')
 
-# Save the model and scaler
-print(f"\n[INFO] Saving model and scaler...")
-model_dir = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(model_dir, 'flood_model.pkl')
-scaler_path = os.path.join(model_dir, 'flood_scaler.pkl')
-
-joblib.dump(rf_model, model_path)
+joblib.dump(model,  model_path)
 joblib.dump(scaler, scaler_path)
 
-print(f"[SUCCESS] ✅ Model saved to: {model_path}")
-print(f"[SUCCESS] ✅ Scaler saved to: {scaler_path}")
-
-# Save feature names for reference
-feature_info = {
-    'features': feature_columns,
-    'feature_importance': dict(zip(feature_columns, rf_model.feature_importances_)),
-    'accuracy': accuracy,
-    'roc_auc': roc_auc
+model_info = {
+    'model_type':   'RandomForestClassifier',
+    'features':     FEATURE_COLS,
+    'n_features':   len(FEATURE_COLS),
+    'target':       'flood_label (1=flood, 0=no_flood)',
+    'n_estimators': 200,
+    'accuracy':     round(accuracy, 4),
+    'roc_auc':      round(roc_auc, 4),
+    'train_samples': int(X_train.shape[0]),
+    'test_samples':  int(X_test.shape[0]),
+    'feature_importance': dict(zip(
+        FEATURE_COLS,
+        [round(v, 4) for v in model.feature_importances_]
+    )),
+    'data_source': 'flood_data_with_dynamic_labels.csv (real Ganga/Varanasi data)',
+    'sklearn_version': '1.9.1'
 }
 
-import json
-info_path = os.path.join(model_dir, 'model_info.json')
 with open(info_path, 'w') as f:
-    json.dump(feature_info, f, indent=2)
-
-print(f"[SUCCESS] ✅ Model info saved to: {info_path}")
+    json.dump(model_info, f, indent=2)
 
 print(f"\n{'='*60}")
-print(f"TRAINING COMPLETE!")
+print("TRAINING COMPLETE")
 print(f"{'='*60}")
+print(f"[SAVED] Model  -> {model_path}")
+print(f"[SAVED] Scaler -> {scaler_path}")
+print(f"[SAVED] Info   -> {info_path}")

@@ -1,4 +1,5 @@
 {
+  "model_type": "RandomForestClassifier",
   "features": [
     "water_level_varanasi",
     "discharge_cumec",
@@ -7,14 +8,21 @@
     "temperature_c",
     "humidity_pct"
   ],
+  "n_features": 6,
+  "target": "flood_label (1=flood, 0=no_flood)",
+  "n_estimators": 200,
+  "accuracy": 0.9954,
+  "roc_auc": 1.0,
+  "train_samples": 876,
+  "test_samples": 219,
   "feature_importance": {
-    "water_level_varanasi": 0.07062345518284958,
-    "discharge_cumec": 0.1838001493457897,
-    "rain_varanasi_mm": 0.3996250032355182,
-    "rain_upstream_avg_mm": 0.33604808273540604,
-    "temperature_c": 0.00477374410167444,
-    "humidity_pct": 0.005129565398762042
+    "water_level_varanasi": 0.0708,
+    "discharge_cumec": 0.1843,
+    "rain_varanasi_mm": 0.3943,
+    "rain_upstream_avg_mm": 0.3402,
+    "temperature_c": 0.0058,
+    "humidity_pct": 0.0046
   },
-  "accuracy": 0.9954337899543378,
-  "roc_auc": 1.0
+  "data_source": "flood_data_with_dynamic_labels.csv (real Ganga/Varanasi data)",
+  "sklearn_version": "1.9.1"
 }

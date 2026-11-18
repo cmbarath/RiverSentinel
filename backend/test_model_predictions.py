@@ -116,7 +116,7 @@ for i, scenario in enumerate(test_scenarios, 1):
     print(f"  Discharge:        {scenario['discharge']:.2f} cumec")
     print(f"  Rain (Varanasi):  {scenario['rain_varanasi']:.2f} mm/hr")
     print(f"  Rain (Upstream):  {scenario['rain_upstream']:.2f} mm/hr")
-    print(f"  Temperature:      {scenario['temperature']:.2f} °C")
+    print(f"  Temperature:      {scenario['temperature']:.2f} C")
     print(f"  Humidity:         {scenario['humidity']:.2f} %")
     
     # Scale features
@@ -129,16 +129,16 @@ for i, scenario in enumerate(test_scenarios, 1):
     # Determine risk level
     if probability >= 0.7:
         risk_level = 'HIGH'
-        risk_emoji = '🔴'
+        risk_badge = '[HIGH]'
     elif probability >= 0.4:
         risk_level = 'MODERATE'
-        risk_emoji = '🟡'
+        risk_badge = '[MODERATE]'
     else:
         risk_level = 'LOW'
-        risk_emoji = '🟢'
+        risk_badge = '[LOW]'
     
     # Display results
-    print(f"\n{risk_emoji} PREDICTION RESULTS:")
+    print(f"\n{risk_badge} PREDICTION RESULTS:")
     print(f"  Prediction:       {'FLOOD' if prediction == 1 else 'NO FLOOD'}")
     print(f"  Probability:      {probability * 100:.2f}%")
     print(f"  Risk Level:       {risk_level}")
@@ -146,5 +146,5 @@ for i, scenario in enumerate(test_scenarios, 1):
 print("\n" + "="*60)
 print("TESTING COMPLETE!")
 print("="*60)
-print("\n✅ All test scenarios executed successfully!")
+print("\n[SUCCESS] All test scenarios executed successfully!")
 print("The model is working correctly with random values.\n")

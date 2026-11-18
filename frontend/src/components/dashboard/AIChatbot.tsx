@@ -9,7 +9,7 @@ const AIChatbot = () => {
     const [speakingMessageIndex, setSpeakingMessageIndex] = useState<number | null>(null);
 
     // Language-specific greeting messages
-    const greetings = {
+    const greetings: Record<string, string> = {
         "English": "Namaste! I am your RiverSentinel AI Assistant. How can I help you today with Ganga's water quality or safety?",
         "हिन्दी": "नमस्ते! मैं आपका RiverSentinel AI सहायक हूं। मैं आज गंगा की जल गुणवत्ता या सुरक्षा के बारे में आपकी कैसे मदद कर सकता हूं?",
         "भोजपुरी": "प्रणाम! हम रउरा RiverSentinel AI सहायक बानी। आज गंगा के पानी के गुणवत्ता भा सुरक्षा के बारे में हम रउरा के कइसे मदद कर सकीलें?",
@@ -29,6 +29,7 @@ const AIChatbot = () => {
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const [chatbotAvailable, setChatbotAvailable] = useState<boolean | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<any>(null);
 
@@ -37,6 +38,28 @@ const AIChatbot = () => {
     };
 
     useEffect(scrollToBottom, [messages]);
+
+    // Check chatbot availability on mount
+    useEffect(() => {
+        const checkAvailability = async () => {
+            try {
+                const resp = await fetch(
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/health`
+                );
+                const data = await resp.json();
+                setChatbotAvailable(!!data.chatbot);
+                if (!data.chatbot) {
+                    setMessages([{
+                        role: "bot",
+                        text: "AI chatbot is currently unavailable because the configured AI service is unavailable. The rest of RiverSentinel (sensors, predictions, dashboard) continues to work normally."
+                    }]);
+                }
+            } catch {
+                setChatbotAvailable(false);
+            }
+        };
+        checkAvailability();
+    }, []);
 
     // Update greeting when language changes
     useEffect(() => {
@@ -162,8 +185,9 @@ const AIChatbot = () => {
                     <span style={{ fontSize: '2rem' }}>🤖</span>
                     <div>
                         <h3 style={{ margin: 0 }}>Ganga Sentinel AI</h3>
-                        <div style={{ fontSize: '0.8rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div> Online
+                        <div style={{ fontSize: '0.8rem', color: chatbotAvailable === false ? '#ef4444' : chatbotAvailable === true ? '#10b981' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: chatbotAvailable === false ? '#ef4444' : chatbotAvailable === true ? '#10b981' : '#94a3b8' }}></div>
+                            {chatbotAvailable === null ? 'Checking...' : chatbotAvailable ? 'Online' : 'Unavailable'}
                         </div>
                     </div>
                 </div>
@@ -248,10 +272,17 @@ const AIChatbot = () => {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder={isListening ? "Listening..." : "Ask about water quality, flood risk, or safety..."}
-                    style={{ flex: 1, padding: '0.75rem 1.5rem', borderRadius: '999px', border: '1px solid var(--border)', outline: 'none' }}
+                    placeholder={
+                        chatbotAvailable === false
+                            ? "AI chatbot unavailable – check GROQ_API_KEY in .env"
+                            : isListening
+                            ? "Listening..."
+                            : "Ask about water quality, flood risk, or safety..."
+                    }
+                    disabled={chatbotAvailable === false}
+                    style={{ flex: 1, padding: '0.75rem 1.5rem', borderRadius: '999px', border: '1px solid var(--border)', outline: 'none', opacity: chatbotAvailable === false ? 0.6 : 1 }}
                 />
-                <button onClick={handleSend} className="btn btn-primary" style={{ padding: '0.75rem', borderRadius: '50%', width: '45px', height: '45px' }}>➤</button>
+                <button onClick={handleSend} className="btn btn-primary" disabled={chatbotAvailable === false} style={{ padding: '0.75rem', borderRadius: '50%', width: '45px', height: '45px', opacity: chatbotAvailable === false ? 0.6 : 1 }}>➤</button>
             </div>
             <style>{`
                 @keyframes pulse {
