@@ -168,7 +168,7 @@ const ReportPollution = () => {
                         <div style={{ width: '50px', height: '50px', border: '4px solid #f3f3f3', borderTop: '4px solid var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
                         <h3>AI Analyzing Image...</h3>
-                        <p style={{ color: '#64748b' }}>Deep Analysis by Groq Llama 3.2 Vision</p>
+                        <p style={{ color: '#64748b' }}>AI-Assisted Image Interpretation by Groq (Qwen 3.8 27B)</p>
                     </div>
                 ) : reportData ? (
                     <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -202,6 +202,7 @@ const ReportPollution = () => {
                         <div style={{ background: '#f0f9ff', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #bae6fd' }}>
                             <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Groq AI Insight:</div>
                             <p style={{ color: '#0369a1', fontSize: '0.95rem' }}>{reportData.description}</p>
+                            <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid #bae6fd', paddingTop: '0.5rem' }}>* Note: Assessments represent AI-assisted image interpretation, not scientifically validated pollution detection.</p>
                         </div>
                     </div>
                 ) : (

@@ -28,6 +28,7 @@ from datetime import datetime
 # Suppress sklearn version warnings – models are re-trained so this is safe
 warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
 
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 load_dotenv()
 
 # ---------------------------------------------------------------------------
@@ -692,13 +693,13 @@ def chat():
 
     try:
         completion = groq_client.chat.completions.create(
-            model='llama-4-scout-17b-16e-instruct',
+            model='qwen/qwen3.8-27b',
             messages=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user',   'content': query}
             ],
             temperature=0.7,
-            max_tokens=1024
+            max_tokens=800
         )
         response_text = completion.choices[0].message.content
         return jsonify({'response': response_text})
@@ -747,7 +748,7 @@ def analyze_image():
                     }}
                 ]
             }],
-            model='llama-4-scout-17b-16e-instruct',
+            model='qwen/qwen3.8-27b',
             temperature=0.1, max_tokens=512
         )
 
