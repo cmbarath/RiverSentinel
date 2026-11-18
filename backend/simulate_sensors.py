@@ -41,7 +41,8 @@ def generate_sensor_data():
         "cod": round(random.uniform(10.0, 180.0), 1),
         "do": round(random.uniform(4.0, 9.0), 1),
         "timestamp": timestamp,
-        "status": "live"  # This flag tells frontend it's live data
+        "source": "simulated",
+        "status": "simulated"
     }
     
     # Add some correlation (e.g. high turbidity often with high water level)

@@ -259,6 +259,9 @@ def get_latest_sensors():
         'bod': 30.0, 'cod': 150.0, 'do': 7.0,
         'timestamp': int(time.time()),
         'status': 'default',
+        'provenance': 'default',
+        'is_simulated': False,
+        'is_real': False,
         'temperature_error': False,
         'water_level_error': False
     }
@@ -271,6 +274,18 @@ def get_latest_sensors():
         temp_error = isinstance(raw_temp, (int, float)) and (raw_temp < -100 or raw_temp > 60)
         wl_error   = isinstance(raw_wl,   (int, float)) and raw_wl <= 0
 
+        # Determine sensor provenance (real, simulated, default)
+        source_flag = str(reading.get('source', '')).lower()
+        if source_flag in ('hardware', 'real', 'esp32', 'arduino'):
+            prov = 'real'
+            status_label = 'live'
+        elif source_flag == 'simulated' or reading.get('status') == 'live':
+            prov = 'simulated'
+            status_label = 'simulated'
+        else:
+            prov = 'simulated'
+            status_label = 'simulated'
+
         defaults.update({
             'ph':               max(0.0, min(14.0, float(reading.get('ph', 7.5)))),
             'turbidity':        max(0.0, float(reading.get('turbidity', 100.0))),
@@ -282,7 +297,10 @@ def get_latest_sensors():
             'cod':              max(0.0, float(reading.get('cod', 150.0))),
             'do':               max(0.0, float(reading.get('do', 7.0))),
             'timestamp':        reading.get('timestamp', int(time.time())),
-            'status':           'live',
+            'status':           status_label,
+            'provenance':       prov,
+            'is_simulated':     (prov == 'simulated'),
+            'is_real':          (prov == 'real'),
             'temperature_error': temp_error,
             'water_level_error': wl_error
         })
@@ -441,7 +459,8 @@ def predict_flood_risk():
             'cod':           round(cod, 1),
             'do':            round(do_level, 1)
         },
-        'prediction_time': datetime.now().strftime('%Y-%m-%dT%H:%M:%S+05:30')
+        'prediction_time': datetime.now().strftime('%Y-%m-%dT%H:%M:%S+05:30'),
+        'disclaimer': 'Statistical early-warning estimate from 6-feature Random Forest; consult official CWC bulletins for statutory warnings.'
     })
 
 # ---------------------------------------------------------------------------
@@ -603,7 +622,8 @@ def predict_water_quality():
             'cod':         round(cod, 1),
             'do':          round(do_level, 1)
         },
-        'prediction_time': datetime.now().strftime('%Y-%m-%dT%H:%M:%S+05:30')
+        'prediction_time': datetime.now().strftime('%Y-%m-%dT%H:%M:%S+05:30'),
+        'disclaimer': 'Preliminary screening model trained on WHO/BIS drinking water guidelines; does not replace certified microbiological/chemical laboratory analysis.'
     })
 
 # ---------------------------------------------------------------------------

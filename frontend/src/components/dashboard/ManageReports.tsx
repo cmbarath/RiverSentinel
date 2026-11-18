@@ -8,10 +8,12 @@ const ManageReports = () => {
     const [selectedReport, setSelectedReport] = useState<any>(null);
     const [filter, setFilter] = useState("All Status");
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/authority/reports');
+            const response = await fetch(`${backendUrl}/api/authority/reports`);
             const data = await response.json();
             setReports(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -27,7 +29,7 @@ const ManageReports = () => {
 
     const handleStatusUpdate = async (reportId: string, status: string) => {
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/authority/reports/update', {
+            const response = await fetch(`${backendUrl}/api/authority/reports/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reportId, status })

@@ -1,10 +1,56 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSensorData } from "@/hooks/useSensorData";
+
+interface QualityPrediction {
+    potable: boolean;
+    quality_score: number;
+    quality_level: string;
+    message: string;
+    reasons: string[];
+    recommendations: string[];
+}
 
 const WaterQuality = () => {
     const { readings } = useSensorData();
+    const [prediction, setPrediction] = useState<QualityPrediction | null>(null);
+
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
+    useEffect(() => {
+        const fetchQualityPrediction = async () => {
+            try {
+                const res = await fetch(`${backendUrl}/api/water-quality/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ph: readings.ph,
+                        turbidity: readings.turbidity,
+                        temperature: readings.temperature,
+                        ec: readings.ec,
+                        do: readings.do
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setPrediction(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch quality prediction:", err);
+            }
+        };
+
+        fetchQualityPrediction();
+    }, [readings.ph, readings.turbidity, readings.temperature, readings.ec, readings.do, backendUrl]);
+
+    const getProvenanceBadge = () => {
+        if (readings.provenance === 'real') return { text: '🟢 Live Hardware Stream (ESP32/Arduino Node)', bg: '#f0fdf4', color: '#166534' };
+        if (readings.provenance === 'simulated') return { text: '🟡 Simulated Stream (Demo Telemetry)', bg: '#fefce8', color: '#854d0e' };
+        return { text: '⚪ Default Baseline (Sensors Offline)', bg: '#f8fafc', color: '#475569' };
+    };
+
+    const prov = getProvenanceBadge();
 
     const metrics = [
         { label: 'pH Level', value: readings.ph.toFixed(1), unit: '', status: readings.ph >= 6.5 && readings.ph <= 8.5 ? 'Good' : 'Caution', color: readings.ph >= 6.5 && readings.ph <= 8.5 ? '#10b981' : '#f59e0b' },
@@ -37,6 +83,42 @@ const WaterQuality = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Sensor Provenance Banner */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: prov.bg, color: prov.color, padding: '0.75rem 1.25rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', fontWeight: 600 }}>
+                <span>Telemetry Status: {prov.text}</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>Sampling Interval: 5s</span>
+            </div>
+
+            {/* ML Water Quality & Potability Prediction */}
+            {prediction && (
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: `6px solid ${prediction.potable ? '#10b981' : '#f59e0b'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div>
+                            <h3 style={{ margin: 0 }}>ML Potability & Safety Assessment</h3>
+                            <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                Rating: <strong style={{ color: prediction.potable ? '#10b981' : '#f59e0b' }}>{prediction.quality_level}</strong> (Score: {prediction.quality_score}%)
+                            </div>
+                        </div>
+                        <span className={`badge badge-${prediction.potable ? 'success' : 'warning'}`} style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}>
+                            {prediction.potable ? 'POTABLE / SAFE' : 'TREATMENT REQUIRED'}
+                        </span>
+                    </div>
+
+                    <p style={{ margin: 0, color: '#334155', fontSize: '0.95rem' }}>{prediction.message}</p>
+
+                    {prediction.recommendations.length > 0 && (
+                        <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.5rem', fontSize: '0.85rem', color: '#475569' }}>
+                            <strong>Recommendations:</strong> {prediction.recommendations.join(' • ')}
+                        </div>
+                    )}
+
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem' }}>
+                        * Note: Water quality evaluation is an AI-assisted screening model trained on WHO/BIS drinking water parameters. It provides automated estimation and does not replace certified laboratory microbiological testing.
+                    </div>
+                </div>
+            )}
+
+            {/* Sensor Metrics Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {metrics.map((p, i) => (
                     <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -49,8 +131,12 @@ const WaterQuality = () => {
                 ))}
             </div>
 
+            {/* Disease Risk Table */}
             <div className="card">
-                <h3 style={{ marginBottom: '1.5rem' }}>Disease Risk Analysis</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ margin: 0 }}>Waterborne Disease Risk Screening</h3>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Preliminary screening based on bacterial & turbidity correlates</span>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>

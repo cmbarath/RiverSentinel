@@ -12,6 +12,9 @@ export interface SensorReadings {
     do: number;
     timestamp?: number;
     status?: string;
+    provenance?: 'real' | 'simulated' | 'default' | 'unavailable';
+    is_simulated?: boolean;
+    is_real?: boolean;
     temperature_error?: boolean;
     water_level_error?: boolean;
 }
@@ -26,10 +29,13 @@ const defaultReadings: SensorReadings = {
     bod: 30,
     cod: 150,
     do: 7.0,
-    status: 'loading'
+    status: 'loading',
+    provenance: 'default',
+    is_simulated: false,
+    is_real: false
 };
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 export const useSensorData = () => {
     const [readings, setReadings] = useState<SensorReadings>(defaultReadings);

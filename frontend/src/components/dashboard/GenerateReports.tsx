@@ -9,7 +9,8 @@ const GenerateReports = () => {
     const fetchSummary = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/authority/report-summary');
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+            const response = await fetch(`${backendUrl}/api/authority/report-summary`);
             const data = await response.json();
             if (data.status === 'success') {
                 setSummary(data);

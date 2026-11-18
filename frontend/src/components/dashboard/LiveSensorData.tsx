@@ -3,7 +3,7 @@
 import React from "react";
 import { useSensorData } from "@/hooks/useSensorData";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 const LiveSensorData = () => {
     const { readings, loading, refresh } = useSensorData();
@@ -11,6 +11,13 @@ const LiveSensorData = () => {
     const handleExport = () => {
         // Trigger the backend export endpoint
         window.location.href = `${BACKEND_URL}/api/authority/export-data`;
+    };
+
+    const getProvenanceBadge = () => {
+        if (loading) return '⏳ Loading sensor data...';
+        if (readings.provenance === 'real') return '🟢 Live Hardware Stream (Arduino/ESP32 Node)';
+        if (readings.provenance === 'simulated') return '🟡 Simulated Stream (Demo Telemetry)';
+        return '⚪ Default Baseline (Sensors Inactive / Offline)';
     };
 
     const sensors = [
@@ -31,7 +38,7 @@ const LiveSensorData = () => {
                 <div>
                     <h3>Real-Time Sensor Network</h3>
                     <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
-                        {loading ? '⏳ Loading...' : readings.status === 'live' ? '🟢 Live Data from Arduino' : '⚠️ Using Default Values'}
+                        {getProvenanceBadge()}
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>

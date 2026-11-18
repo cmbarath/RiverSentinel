@@ -10,11 +10,12 @@ const CommandCenter = () => {
         setLoading(action);
         setStatus({type: 'info', msg: `Processing ${action}...`});
         
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
         try {
-            let response;
             if (action === 'export') {
                 // Handle file download for export
-                window.location.href = 'http://127.0.0.1:5000/api/authority/export-data';
+                window.location.href = `${backendUrl}/api/authority/export-data`;
                 setStatus({type: 'success', msg: 'System data export started.'});
                 setLoading(null);
                 return;
@@ -34,7 +35,7 @@ const CommandCenter = () => {
                 }
             }
 
-            response = await fetch(`http://127.0.0.1:5000${endpoints[action]}`, {
+            const response = await fetch(`${backendUrl}${endpoints[action]}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})

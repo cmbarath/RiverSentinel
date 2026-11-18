@@ -221,6 +221,10 @@ const WeatherAndFlood = () => {
                             Updated: {new Date(floodPrediction.prediction_time).toLocaleTimeString('en-IN')}
                         </div>
                     )}
+
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                        * Note: Flood probability is an automated early-warning estimate from the 6-feature Random Forest model; consult official CWC bulletins for statutory warnings.
+                    </div>
                 </div>
             </div>
 

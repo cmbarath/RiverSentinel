@@ -23,6 +23,8 @@ const ReportPollution = () => {
         }
     };
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
     const analyzeWithAI = (file: File) => {
         setAnalyzing(true);
         setReportData(null);
@@ -30,7 +32,7 @@ const ReportPollution = () => {
         const formData = new FormData();
         formData.append('image', file);
 
-        fetch(`http://127.0.0.1:5000/api/ai/analyze-image`, {
+        fetch(`${backendUrl}/api/ai/analyze-image`, {
             method: 'POST',
             body: formData 
         })
@@ -64,7 +66,7 @@ const ReportPollution = () => {
 
         setSubmitting(true);
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/reports/submit', {
+            const response = await fetch(`${backendUrl}/api/reports/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
