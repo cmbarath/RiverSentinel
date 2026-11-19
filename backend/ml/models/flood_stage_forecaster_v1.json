@@ -1,0 +1,59 @@
+{
+  "model_name": "flood_stage_forecaster_v1",
+  "task": "river_stage_regression_1day_ahead",
+  "model_type": "RandomForestRegressor",
+  "version": "1.0.0",
+  "target": "river_level_at_t_plus_1_day_metres_msl",
+  "features": [
+    "stage_t",
+    "stage_lag1",
+    "stage_lag2",
+    "stage_delta_1d",
+    "stage_delta_2d",
+    "stage_rolling_mean_3d",
+    "stage_rolling_mean_7d",
+    "stage_rolling_max_7d",
+    "rain_local_t",
+    "rain_local_3d_sum",
+    "rain_upstream_t",
+    "rain_upstream_3d_sum",
+    "discharge_t",
+    "temp_t",
+    "humidity_t",
+    "season_sin",
+    "season_cos"
+  ],
+  "units": {
+    "stage": "metres MSL",
+    "rainfall": "mm",
+    "discharge": "cumec",
+    "temperature": "deg C",
+    "humidity": "percent"
+  },
+  "training_period": "2018-01-08 to 2019-12-30",
+  "test_period": "2020-01-01 to 2020-12-29",
+  "test_samples": 364,
+  "metrics_test_2020": {
+    "mae_metres": 0.797,
+    "rmse_metres": 0.9809,
+    "bias_metres": 0.0237,
+    "r2_score": -0.0591,
+    "high_water_mae_metres": 0.8036
+  },
+  "baseline_comparison": {
+    "persistence_mae_metres": 1.0635,
+    "persistence_rmse_metres": 1.3272
+  },
+  "statutory_cwc_thresholds_varanasi": {
+    "warning_stage_m": 70.26,
+    "danger_stage_m": 71.26,
+    "highest_flood_level_m": 73.9
+  },
+  "status": "experimental",
+  "known_limitations": [
+    "Dataset contains no records crossing CWC Warning Stage (70.26 m) or Danger Stage (71.26 m).",
+    "Historical dataset reflects semi-synthetic simulation perturbations with non-seasonal rainfall artifacts.",
+    "Cannot trigger statutory emergency alerts; statutory alerts must strictly follow CWC gauge readings.",
+    "Requires upstream hydro-meteorological inputs from Prayagraj / Yamuna confluence for catastrophic flood forecasting."
+  ]
+}

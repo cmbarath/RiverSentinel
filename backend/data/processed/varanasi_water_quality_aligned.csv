@@ -1,0 +1,273 @@
+station_name,clean_station_name,river,waterbody_type,station_role,latitude,longitude,sample_date,ph,do_mg_l,bod_mg_l,total_coliform_mpn_100ml,fecal_coliform_mpn_100ml,turbidity_ntu,conductivity_us_cm,temperature_c,tds_mg_l,cod_mg_l,nitrate_mg_l,is_cpcb_class_b_complete
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-01-03 08:30:00,8.19,7.3,5.3,,33000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-02-03 08:30:00,8.15,7.8,5.2,,23000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-03-04 08:30:00,8.12,7.5,5.3,,33000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-04-04 08:30:00,8.18,7.2,5.3,,43000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-05-05 08:30:00,8.15,6.5,5.8,,33000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-06-02 08:30:00,8.18,6.5,5.6,,43000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-07-04 08:30:00,8.25,6.5,5.5,,33000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-08-05 08:30:00,8.2,6.5,4.6,,31000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-09-02 08:30:00,8.17,6.2,4.6,,22000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-10-05 08:30:00,8.2,6.3,4.5,,23000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-11-02 08:30:00,8.2,6.3,4.6,,31000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2018-12-02 08:30:00,8.16,6.1,4.5,,23000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-01-03 08:30:00,8.2,6.7,4.1,,23000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-02-02 08:30:00,8.2,7.3,3.4,,17000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-03-02 08:30:00,8.2,7.2,3.6,,23000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-04-03 08:30:00,8.2,7.3,3.6,,22000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-05-02 08:30:00,8.2,7.2,3.6,,22000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-06-02 08:30:00,8.2,7.4,3.5,,17000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-07-03 08:30:00,8.3,7.3,3.8,,22000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-08-01 08:30:00,7.9,6.5,3.8,,17000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-09-01 08:30:00,8.1,6.6,4.2,,14000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-10-01 08:30:00,8.1,6.5,4.2,,23000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-11-01 08:30:00,8.2,6.8,4.1,,17000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2019-12-02 08:30:00,8.7,7.9,3.6,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-01-02 08:30:00,8.6,8.4,3.6,17000.0,11000.0,18.0,456.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-02-03 08:30:00,8.4,8.8,3.7,22000.0,14000.0,16.0,476.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-03-02 08:30:00,8.3,8.4,3.7,24000.0,14000.0,19.0,468.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-04-16 08:30:00,8.7,9.5,4.0,14000.0,9400.0,,,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-05-07 08:30:00,8.6,8.8,3.6,14000.0,7000.0,17.0,454.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-06-01 08:30:00,8.4,7.3,4.1,22000.0,11000.0,20.0,546.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-07-01 08:30:00,8.4,7.2,3.8,27000.0,14000.0,204.0,506.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-08-02 08:30:00,8.4,7.0,3.9,22000.0,13000.0,212.0,364.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-08-18 08:30:00,8.3,6.8,4.1,24000.0,13000.0,138.0,312.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-09-01 08:30:00,7.8,5.8,4.2,31000.0,17000.0,150.0,254.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-09-18 08:30:00,8.3,6.2,3.8,23000.0,13000.0,144.0,262.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-10-01 08:30:00,8.4,6.5,3.5,22000.0,14000.0,95.0,454.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-10-19 08:30:00,8.3,7.2,3.7,21000.0,13000.0,88.0,462.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-11-02 08:30:00,8.5,7.3,3.6,21000.0,13000.0,56.0,468.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-11-17 08:30:00,8.4,7.5,3.5,17000.0,11000.0,50.0,478.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-12-01 08:30:00,8.4,7.5,3.8,21000.0,13000.0,30.0,492.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2020-12-17 08:30:00,8.4,7.8,3.7,22000.0,14000.0,22.0,504.0,,,,,True
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-01-01 08:30:00,8.3,7.9,3.6,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-01-16 08:30:00,8.3,7.5,3.7,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-02-01 08:30:00,8.12,9.4,3.3,,8000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-02-18 08:30:00,8.11,8.5,3.5,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-03-01 08:30:00,8.14,7.9,4.0,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-03-18 08:30:00,8.21,8.4,3.6,,8000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-04-01 08:30:00,8.25,7.9,4.0,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-04-19 08:30:00,8.22,7.8,3.8,,8000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-05-01 08:30:00,8.28,7.7,3.8,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-05-18 08:30:00,8.32,7.5,4.0,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-06-01 08:30:00,8.32,7.7,3.7,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-06-18 08:30:00,8.29,7.5,4.0,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-07-01 08:30:00,8.3,7.2,4.0,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-07-15 08:30:00,8.37,7.7,3.7,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-08-01 08:30:00,7.82,6.7,4.1,,13000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-08-18 08:30:00,7.74,6.4,3.5,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-09-01 08:30:00,7.72,6.5,3.5,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-09-15 08:30:00,7.69,6.2,3.7,,9200.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-10-04 08:30:00,7.33,6.5,3.5,,9000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-10-18 08:30:00,7.44,6.8,3.4,,11000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-11-01 08:30:00,7.5,6.6,3.4,,8000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-11-15 08:30:00,7.61,7.5,3.5,,7000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-12-01 08:30:00,8.05,8.1,3.4,,8000.0,,,,,,,False
+GANGA AT VARANASI D/S (MALVIYA BRIDGE) U.P,Ganga D/S Malviya Bridge (Rajghat),Ganga,Mainstem River,downstream_impact,25.3211,83.0317,2021-12-17 08:30:00,8.11,8.9,3.5,,9000.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-01-03 08:30:00,8.34,8.6,2.8,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-02-03 08:30:00,8.36,9.2,2.6,,1300.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-03-04 08:30:00,8.35,8.7,3.0,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-04-04 08:30:00,8.35,8.8,3.0,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-05-05 08:30:00,8.37,7.7,3.2,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-06-02 08:30:00,8.35,7.7,3.1,,2200.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-07-04 08:30:00,8.33,7.8,3.0,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-08-05 08:30:00,8.22,7.7,2.7,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-09-02 08:30:00,8.2,7.4,2.8,,1300.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-10-05 08:30:00,8.34,7.8,2.7,,1300.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-11-05 08:30:00,8.26,8.4,2.6,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2018-12-02 08:30:00,8.25,8.5,2.5,,500.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-01-03 08:30:00,8.3,8.9,2.2,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-02-02 08:30:00,8.3,10.0,1.7,,500.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-03-02 08:30:00,8.3,8.9,2.4,,700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-04-03 08:30:00,8.4,8.4,2.4,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-05-02 08:30:00,8.4,8.0,2.7,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-06-02 08:30:00,8.4,8.4,2.6,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-07-03 08:30:00,8.4,7.9,2.8,,1300.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-08-01 08:30:00,8.1,7.2,3.3,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-09-01 08:30:00,8.3,7.3,3.1,,1100.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-10-01 08:30:00,8.3,7.2,3.2,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-11-01 08:30:00,8.2,7.4,3.0,,1700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2019-12-02 08:30:00,8.4,8.7,2.3,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-01-02 08:30:00,8.3,9.3,2.2,2200.0,1300.0,14.0,417.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-02-03 08:30:00,8.2,9.7,2.1,2300.0,1300.0,12.0,452.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-03-02 08:30:00,8.1,9.3,2.6,2400.0,1100.0,15.0,468.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-04-16 08:30:00,8.5,10.4,2.6,1700.0,700.0,,,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-05-07 08:30:00,8.5,9.6,2.3,1100.0,500.0,13.0,444.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-06-01 08:30:00,8.3,8.0,2.8,1300.0,500.0,15.0,512.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-07-01 08:30:00,8.5,7.8,2.7,2600.0,1100.0,192.0,490.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-08-02 08:30:00,8.4,7.7,2.6,2300.0,1300.0,198.0,342.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-08-18 08:30:00,8.3,7.5,2.8,2700.0,1400.0,130.0,290.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-09-01 08:30:00,7.9,6.5,6.5,3400.0,1300.0,142.0,242.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-09-18 08:30:00,7.9,6.8,3.0,2300.0,1300.0,136.0,254.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-10-01 08:30:00,8.5,7.0,2.7,2200.0,1300.0,82.0,422.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-10-19 08:30:00,8.5,8.3,2.5,1400.0,900.0,76.0,430.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-11-02 08:30:00,8.6,8.7,2.4,1700.0,800.0,42.0,436.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-11-17 08:30:00,8.5,8.8,2.2,1400.0,800.0,38.0,450.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-12-01 08:30:00,8.52,8.6,2.4,1700.0,1100.0,22.0,458.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2020-12-17 08:30:00,8.2,8.9,2.3,1400.0,800.0,15.0,472.0,,,,,True
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-01-01 08:30:00,8.2,9.3,2.2,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-02-01 08:30:00,8.33,10.0,1.9,,700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-02-18 08:30:00,8.29,9.8,2.5,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-03-01 08:30:00,8.33,8.8,2.4,,700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-03-18 08:30:00,8.42,9.6,1.9,,500.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-04-01 08:30:00,8.44,8.7,2.3,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-04-19 08:30:00,8.39,8.8,2.2,,500.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-05-01 08:30:00,8.46,8.7,2.2,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-05-18 08:30:00,8.52,8.5,2.4,,1100.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-06-01 08:30:00,8.44,8.6,2.3,,900.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-06-18 08:30:00,8.41,8.3,2.6,,1100.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-07-01 08:30:00,8.42,7.9,2.6,,1100.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-07-15 08:30:00,8.45,8.4,2.3,,1300.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-08-01 08:30:00,7.92,7.5,2.8,,1100.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-08-18 08:30:00,7.87,7.2,2.5,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-09-01 08:30:00,7.85,7.0,2.3,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-09-15 08:30:00,7.78,6.8,2.5,,900.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-10-04 08:30:00,7.45,7.3,2.1,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-10-18 08:30:00,7.56,7.5,2.0,,700.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-11-01 08:30:00,7.62,7.4,2.2,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-11-15 08:30:00,8.22,8.1,2.0,,800.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-12-01 08:30:00,8.2,8.8,1.7,,1100.0,,,,,,,False
+GANGA AT VARANASI U/S (ASSIGHAT) U.P,Ganga U/S Assi Ghat,Ganga,Mainstem River,upstream_baseline,25.2917,83.0039,2021-12-17 08:30:00,8.25,9.8,1.8,,500.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-01-06 08:30:00,8.4,8.5,3.8,,13000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-02-02 08:30:00,8.45,8.8,3.8,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-03-08 08:30:00,8.4,8.4,3.8,,13000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-04-03 08:30:00,8.45,8.3,4.0,,13000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-05-05 08:30:00,8.48,7.6,4.2,,13000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-06-05 08:30:00,8.5,7.5,4.3,,13000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-07-05 08:30:00,8.47,7.6,4.1,,11000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-08-04 08:30:00,8.3,7.4,3.8,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-09-03 08:30:00,8.32,6.8,4.0,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-10-03 08:30:00,8.35,7.3,3.4,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-11-06 08:30:00,8.37,7.8,3.3,,11000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2018-12-03 08:30:00,8.35,8.0,3.2,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-01-05 08:30:00,8.4,8.2,3.1,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-02-04 08:30:00,8.4,8.7,2.8,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-03-02 08:30:00,8.4,8.0,3.0,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-04-02 08:30:00,8.5,7.8,3.2,,11000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-05-05 08:30:00,8.4,7.5,3.4,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-06-02 08:30:00,8.4,7.8,3.3,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-07-05 08:30:00,8.4,7.5,3.5,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-08-02 08:30:00,8.3,6.8,3.8,,5000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-09-02 08:30:00,8.3,6.9,3.7,,7000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-10-02 08:30:00,8.3,6.8,3.8,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-11-02 08:30:00,8.3,7.1,3.7,,7000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2019-12-03 08:30:00,8.5,8.1,3.5,,4300.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-01-03 08:30:00,8.5,8.8,3.3,8000.0,5000.0,20.0,438.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-02-03 08:30:00,8.4,8.6,3.5,11000.0,5000.0,15.0,460.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-03-03 08:30:00,8.5,8.3,3.6,14000.0,8000.0,18.0,478.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-04-16 08:30:00,8.7,8.4,3.1,7000.0,3300.0,,,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-05-06 08:30:00,8.5,7.3,3.6,13000.0,5000.0,22.0,485.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-06-02 08:30:00,8.4,6.8,4.3,17000.0,8000.0,25.0,534.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-07-02 08:30:00,8.4,6.6,4.2,21000.0,11000.0,216.0,508.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-08-03 08:30:00,8.3,6.5,3.8,17000.0,8000.0,220.0,358.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-09-01 08:30:00,8.0,6.2,3.8,23000.0,13000.0,152.0,248.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-10-01 08:30:00,8.4,6.8,3.6,21000.0,11000.0,88.0,436.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-11-03 08:30:00,8.5,7.8,3.4,17000.0,11000.0,52.0,442.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2020-12-02 08:30:00,8.4,8.2,3.3,14000.0,7000.0,35.0,472.0,,,,,True
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-01-02 08:30:00,8.4,8.5,3.5,,9000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-02-01 08:30:00,8.36,8.7,3.6,,11000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-03-02 08:30:00,8.29,8.2,3.7,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-04-02 08:30:00,8.32,8.0,3.8,,7000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-05-03 08:30:00,8.38,7.8,3.9,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-06-02 08:30:00,8.47,7.6,3.8,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-07-02 08:30:00,8.37,7.5,3.7,,7000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-08-03 08:30:00,7.78,7.2,3.8,,8000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-09-02 08:30:00,7.78,6.8,3.4,,7000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-10-05 08:30:00,7.42,7.0,3.3,,5000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-11-02 08:30:00,7.59,7.2,3.2,,5000.0,,,,,,,False
+GOMTI AT VARANASI U.P,Gomti at Varanasi,Gomti,Tributary,regional_tributary,25.5,83.15,2021-12-02 08:30:00,8.32,7.8,3.3,,4900.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-01-04 08:30:00,8.27,8.6,3.1,,800.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-02-06 08:30:00,8.32,8.9,2.8,,700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-03-26 08:30:00,7.8,,55.0,,,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-04-01 08:30:00,8.45,7.8,4.3,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-05-02 08:30:00,8.38,7.8,3.8,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-06-03 08:30:00,8.42,7.6,3.8,,2200.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-07-01 08:30:00,8.35,7.7,3.5,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-08-03 08:30:00,8.27,7.8,3.1,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-09-05 08:30:00,8.3,7.5,2.9,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-10-03 08:30:00,8.32,7.7,2.8,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2018-11-05 08:30:00,8.25,8.3,3.0,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-01-06 08:30:00,8.4,8.2,2.9,,1100.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-02-06 08:30:00,8.4,8.4,2.4,,2200.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-03-04 08:30:00,8.4,7.8,3.7,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-04-04 08:30:00,8.4,7.6,3.9,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-05-05 08:30:00,8.4,7.7,3.5,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-06-04 08:30:00,8.4,8.1,3.2,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-07-06 08:30:00,8.4,8.0,3.2,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-08-02 08:30:00,8.2,7.5,3.3,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-09-02 08:30:00,8.3,7.7,3.2,,1400.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-10-02 08:30:00,8.3,7.6,3.3,,1100.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-11-02 08:30:00,8.4,7.8,2.9,,1100.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2019-12-03 08:30:00,8.6,8.1,3.3,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-01-03 08:30:00,8.4,8.5,3.1,2600.0,1400.0,16.0,424.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-02-01 08:30:00,8.4,8.7,3.0,3100.0,1300.0,14.0,458.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-03-03 08:30:00,8.4,8.5,3.2,2700.0,1300.0,20.0,462.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-04-16 08:30:00,8.9,6.2,3.2,2100.0,800.0,,,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-05-06 08:30:00,8.7,7.6,3.4,2200.0,1300.0,22.0,480.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-06-02 08:30:00,8.6,7.5,3.3,2600.0,1100.0,18.0,522.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-07-02 08:30:00,8.4,7.3,3.6,3400.0,1400.0,188.0,496.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-08-04 08:30:00,8.4,7.2,3.5,3100.0,1700.0,208.0,356.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-09-02 08:30:00,8.2,6.8,3.5,3100.0,1700.0,138.0,236.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-10-02 08:30:00,8.3,7.2,3.3,2700.0,1400.0,78.0,432.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-11-03 08:30:00,8.4,8.5,2.8,2300.0,800.0,46.0,424.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2020-12-03 08:30:00,8.4,8.3,3.1,2700.0,1400.0,25.0,440.0,,,,,True
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-01-02 08:30:00,8.4,8.7,3.3,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-02-02 08:30:00,8.38,9.2,2.8,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-03-03 08:30:00,8.42,8.6,3.1,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-04-03 08:30:00,8.45,8.2,3.2,,1400.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-05-04 08:30:00,8.41,7.9,3.3,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-06-03 08:30:00,8.4,8.1,3.2,,1100.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-07-02 08:30:00,8.46,6.8,3.5,,800.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-08-02 08:30:00,7.95,7.2,3.3,,1700.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-09-03 08:30:00,7.95,7.3,2.7,,1400.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-10-05 08:30:00,7.52,7.5,2.9,,1100.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-11-02 08:30:00,7.62,7.7,2.7,,1300.0,,,,,,,False
+RIVER VARUNA AT RAMESHWAR VARANASI,Varuna at Rameshwar,Varuna,Tributary,rural_tributary,25.385,82.88,2021-12-03 08:30:00,7.94,8.3,2.4,,1700.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-01-04 08:30:00,8.54,2.4,36.8,,170000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-02-06 08:30:00,8.1,2.2,39.6,,130000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-03-12 08:30:00,7.5,,64.0,,,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-04-01 08:30:00,8.05,1.8,49.2,,220000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-05-02 08:30:00,8.2,2.1,46.4,,180000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-06-03 08:30:00,8.07,1.9,49.8,,180000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-07-01 08:30:00,8.09,2.1,45.2,,130000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-08-03 08:30:00,8.12,3.2,22.4,,18000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-09-05 08:30:00,8.15,3.4,17.6,,130000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-10-03 08:30:00,8.12,3.1,19.2,,130000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-11-05 08:30:00,7.95,2.2,28.8,,140000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2018-12-05 08:30:00,7.68,0.5,42.4,,170000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-01-06 08:30:00,8.1,2.6,32.4,,180000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-02-06 08:30:00,7.8,2.2,26.2,,140000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-03-04 08:30:00,7.8,2.4,24.4,,130000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-04-04 08:30:00,7.6,2.5,24.4,,110000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-05-05 08:30:00,7.6,2.0,28.4,,140000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-06-04 08:30:00,7.7,1.6,29.6,,130000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-07-06 08:30:00,7.7,2.2,26.4,,110000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-08-02 08:30:00,7.6,3.6,16.8,,63000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-09-02 08:30:00,7.5,3.4,17.2,,46000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-10-02 08:30:00,7.8,4.0,15.6,,49000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-11-02 08:30:00,7.7,4.3,13.6,,46000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2019-12-03 08:30:00,7.6,4.8,11.6,,49000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-01-03 08:30:00,7.7,3.3,14.4,110000.0,70000.0,246.0,720.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-02-01 08:30:00,7.0,4.5,7.6,63000.0,43000.0,212.0,642.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-03-03 08:30:00,7.6,3.2,12.0,70000.0,49000.0,228.0,675.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-04-16 08:30:00,7.6,2.3,15.3,94000.0,54000.0,,,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-05-06 08:30:00,7.6,2.8,13.2,94000.0,49000.0,240.0,728.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-06-02 08:30:00,7.6,2.1,18.2,110000.0,70000.0,160.0,782.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-07-02 08:30:00,7.6,2.7,11.6,79000.0,49000.0,292.0,694.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-08-04 08:30:00,7.8,3.7,10.4,49000.0,33000.0,286.0,158.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-09-02 08:30:00,7.8,4.3,8.0,63000.0,43000.0,280.0,572.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-10-02 08:30:00,7.7,3.5,10.4,70000.0,49000.0,88.0,635.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-11-03 08:30:00,7.7,2.9,13.2,79000.0,49000.0,175.0,672.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2020-12-03 08:30:00,7.7,3.0,12.8,70000.0,46000.0,168.0,659.0,,,,,True
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-01-02 08:30:00,7.6,3.1,12.4,,46000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-02-02 08:30:00,7.67,6.6,7.2,,31000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-03-03 08:30:00,7.65,5.5,9.6,,33000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-04-03 08:30:00,7.68,4.8,11.2,,23000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-05-04 08:30:00,7.65,4.3,11.6,,33000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-06-03 08:30:00,7.62,3.8,12.8,,31000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-07-02 08:30:00,7.65,3.5,11.2,,22000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-08-02 08:30:00,7.72,5.4,7.2,,17000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-09-03 08:30:00,7.65,4.3,7.2,,23000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-10-05 08:30:00,7.32,5.2,6.8,,22000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-11-02 08:30:00,7.42,4.9,7.1,,23000.0,,,,,,,False
+RIVER VARUNA B/C WITH RIVER GANGA AT VARANASI,Varuna Before Confluence with Ganga,Varuna,Tributary,urban_tributary_confluence,25.335,83.045,2021-12-03 08:30:00,7.53,4.4,7.8,,23000.0,,,,,,,False

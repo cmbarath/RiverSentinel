@@ -1,0 +1,31 @@
+{
+  "model_name": "water_quality_anomaly_detector_v1",
+  "task": "physical_chemical_sensor_anomaly_detection",
+  "model_type": "IsolationForest",
+  "version": "1.0.0",
+  "features": [
+    "ph",
+    "do_mg_l",
+    "turbidity_ntu",
+    "conductivity_us_cm"
+  ],
+  "units": {
+    "ph": "dimensionless",
+    "do_mg_l": "mg/L",
+    "turbidity_ntu": "NTU",
+    "conductivity_us_cm": "uS/cm"
+  },
+  "training_data": "CPCB Uttar Pradesh Ganga Stations (Assi Ghat & Malviya Bridge 2018-2021)",
+  "baseline_sample_count": 129,
+  "contamination_prior": 0.08,
+  "benchmark_results": {
+    "baseline_anomaly_rate_pct": 8.53,
+    "varuna_sewage_anomaly_recall_pct": 27.08
+  },
+  "status": "experimental",
+  "known_limitations": [
+    "Does not measure or predict 5-day Biochemical Oxygen Demand (BOD) or Total Coliform bacteria.",
+    "Cannot declare CPCB Class B compliance without certified laboratory biological analysis.",
+    "Intended solely for in-situ IoT sensor screening, sensor malfunction detection, or industrial spill screening."
+  ]
+}
