@@ -3,9 +3,18 @@
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+interface AIReportAnalysis {
+    pollution: string;
+    types: string[];
+    severity: string;
+    confidence: string;
+    description: string;
+    [key: string]: unknown;
+}
+
 const ReportPollution = () => {
     const [analyzing, setAnalyzing] = useState(false);
-    const [reportData, setReportData] = useState<any>(null);
+    const [reportData, setReportData] = useState<AIReportAnalysis | null>(null);
     const [image, setImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -124,8 +133,9 @@ const ReportPollution = () => {
             } else {
                 throw new Error(data.message);
             }
-        } catch (err: any) {
-            alert("Submission failed: " + err.message);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            alert("Submission failed: " + msg);
         } finally {
             setSubmitting(false);
         }
@@ -153,6 +163,7 @@ const ReportPollution = () => {
                     onClick={() => !submitting && document.getElementById('upload')?.click()}
                 >
                     {image ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Upload" />
                     ) : (
                         <>

@@ -1,17 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+interface PollutionReport {
+    id: string;
+    location: string;
+    reporter: string;
+    timestamp: string;
+    pollution_level?: string;
+    status: string;
+    confidence?: number;
+    imageUrl?: string;
+    assessment?: string;
+    pollutants?: string[];
+    description?: string;
+    [key: string]: unknown;
+}
+
 const ManageReports = () => {
-    const [reports, setReports] = useState<any[]>([]);
+    const [reports, setReports] = useState<PollutionReport[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedReport, setSelectedReport] = useState<any>(null);
+    const [selectedReport, setSelectedReport] = useState<PollutionReport | null>(null);
     const [filter, setFilter] = useState("All Status");
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
-    const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
         try {
             const { data } = await supabase.auth.getSession();
             const token = data?.session?.access_token;
@@ -22,9 +37,9 @@ const ManageReports = () => {
             // ignore session retrieval error
         }
         return {};
-    };
+    }, []);
 
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async () => {
         setLoading(true);
         try {
             const authHeaders = await getAuthHeaders();
@@ -38,11 +53,11 @@ const ManageReports = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [backendUrl, getAuthHeaders]);
 
     React.useEffect(() => {
         fetchReports();
-    }, []);
+    }, [fetchReports]);
 
     const handleStatusUpdate = async (reportId: string, status: string) => {
         try {
@@ -60,7 +75,7 @@ const ManageReports = () => {
                 setReports(reports.map(r => r.id === reportId ? { ...r, status } : r));
                 if (selectedReport?.id === reportId) setSelectedReport({ ...selectedReport, status });
             }
-        } catch (error) {
+        } catch {
             alert("Failed to update report status");
         }
     };
@@ -115,7 +130,8 @@ const ManageReports = () => {
                                             style={{ cursor: 'pointer', width: '40px', height: '40px', background: '#e2e8f0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
                                         >
                                             {r.imageUrl && r.imageUrl.startsWith('data:') ? (
-                                                <img src={r.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                /* eslint-disable-next-line @next/next/no-img-element */
+                                                <img src={r.imageUrl} alt={`Report at ${r.location}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : '📸'}
                                         </div>
                                     </td>
@@ -184,7 +200,8 @@ const ManageReports = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                             <div>
                                 {selectedReport.imageUrl && selectedReport.imageUrl.startsWith('data:') ? (
-                                    <img src={selectedReport.imageUrl} style={{ width: '100%', borderRadius: '1rem', objectFit: 'contain' }} />
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img src={selectedReport.imageUrl} alt={`Report photo for ${selectedReport.location}`} style={{ width: '100%', borderRadius: '1rem', objectFit: 'contain' }} />
                                 ) : (
                                     <div style={{ height: '300px', background: '#f1f5f9', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>No Photo Available</div>
                                 )}

@@ -2,8 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 
+interface RiverHealthReportData {
+    status: string;
+    location: string;
+    timestamp: string;
+    health_score: number;
+    grade: string;
+    safety_status: string;
+    metrics: {
+        purity: number;
+        ph: number;
+        do: number;
+    };
+    [key: string]: unknown;
+}
+
 const DownloadReport = () => {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<RiverHealthReportData | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchHealthStatus = async () => {

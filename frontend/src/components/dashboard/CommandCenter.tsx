@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface StationData {
@@ -43,7 +43,7 @@ export default function CommandCenter() {
     const [totalReadingsCount, setTotalReadingsCount] = useState<number>(0);
     const [fetchingData, setFetchingData] = useState<boolean>(true);
 
-    const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
         try {
             const { data } = await supabase.auth.getSession();
             const token = data?.session?.access_token;
@@ -52,9 +52,9 @@ export default function CommandCenter() {
             // Ignore
         }
         return {};
-    };
+    }, []);
 
-    const fetchDashboardMetrics = async () => {
+    const fetchDashboardMetrics = useCallback(async () => {
         setFetchingData(true);
         try {
             const authHeaders = await getAuthHeaders();
@@ -81,7 +81,7 @@ export default function CommandCenter() {
                 if (repRes.ok) {
                     const repData = await repRes.json();
                     if (Array.isArray(repData)) {
-                        const pending = repData.filter((r: any) => ['pending', 'submitted', 'investigating'].includes(r.status?.toLowerCase())).length;
+                        const pending = repData.filter((r: { status?: string }) => ['pending', 'submitted', 'investigating'].includes(r.status?.toLowerCase() || '')).length;
                         setPendingReportsCount(pending);
                     }
                 }
@@ -91,11 +91,11 @@ export default function CommandCenter() {
         } finally {
             setFetchingData(false);
         }
-    };
+    }, [getAuthHeaders]);
 
     useEffect(() => {
         fetchDashboardMetrics();
-    }, []);
+    }, [fetchDashboardMetrics]);
 
     // Compute dynamic alerts based on live sensor deviations
     const criticalAlerts: AlertItem[] = React.useMemo(() => {
@@ -207,8 +207,9 @@ export default function CommandCenter() {
             } else {
                 throw new Error(data.message || 'Action failed');
             }
-        } catch (error: any) {
-            setStatus({ type: 'error', msg: error.message || 'Failed to connect to backend.' });
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Failed to connect to backend.';
+            setStatus({ type: 'error', msg });
         } finally {
             setLoading(null);
             setTimeout(() => setStatus({ type: null, msg: '' }), 6000);

@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: river-sentinel-backend
+    runtime: python
+    region: singapore
+    plan: free
+    branch: river-sentinel/phase-1-stabilization
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn --config gunicorn.conf.py app:app
+    healthCheckPath: /health/live
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_DB_HOST
+        sync: false
+      - key: SUPABASE_DB_PORT
+        value: 5432
+      - key: SUPABASE_DB_NAME
+        value: postgres
+      - key: SUPABASE_DB_USER
+        value: postgres
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: HMAC_TELEMETRY_KEY
+        sync: false
+      - key: WORKER_API_SECRET
+        sync: false
+      - key: SMS_ENABLED
+        value: "false"

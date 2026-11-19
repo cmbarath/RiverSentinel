@@ -5,14 +5,33 @@ import { supabase } from "@/lib/supabaseClient";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
+interface SMSResult {
+    status?: string;
+    message?: string;
+    note?: string;
+    [key: string]: unknown;
+}
+
+interface OutboxProcessResult {
+    status?: string;
+    message?: string;
+    summary?: {
+        in_app_delivered?: number;
+        sms_dispatched?: number;
+        sms_suppressed?: number;
+        errors?: number;
+    };
+    [key: string]: unknown;
+}
+
 export default function SendSMSAlerts() {
     const [alertType, setAlertType] = useState("Flood Warning");
     const [message, setMessage] = useState("URGENT: CWC Warning Stage exceeded at Dashashwamedh Ghat (70.26m MSL). Low-lying steps evacuated. Emergency Helpline: 1077.");
     const [recipientPhone, setRecipientPhone] = useState("+91 98765 43210");
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<any>(null);
+    const [result, setResult] = useState<SMSResult | null>(null);
     const [outboxRunning, setOutboxRunning] = useState(false);
-    const [outboxResult, setOutboxResult] = useState<any>(null);
+    const [outboxResult, setOutboxResult] = useState<OutboxProcessResult | null>(null);
 
     const getAuthHeaders = async () => {
         const { data } = await supabase.auth.getSession();
@@ -39,8 +58,9 @@ export default function SendSMSAlerts() {
             });
             const data = await res.json();
             setResult(data);
-        } catch (err: any) {
-            setResult({ status: "error", message: err.message });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setResult({ status: "error", message: msg });
         } finally {
             setLoading(false);
         }
@@ -57,8 +77,9 @@ export default function SendSMSAlerts() {
             });
             const data = await res.json();
             setOutboxResult(data);
-        } catch (err: any) {
-            setOutboxResult({ status: "error", message: err.message });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setOutboxResult({ status: "error", message: msg });
         } finally {
             setOutboxRunning(false);
         }

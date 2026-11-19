@@ -94,11 +94,27 @@ def _check_worker_heartbeat() -> Dict[str, Any]:
     return {'registered': False, 'status': 'no_heartbeat_recorded', 'is_active': False}
 
 
+def _check_memory_usage() -> Dict[str, Any]:
+    """Inspect current process memory consumption."""
+    try:
+        import psutil
+        process = psutil.Process()
+        mem_info = process.memory_info()
+        return {
+            'rss_mb': round(mem_info.rss / (1024 * 1024), 2),
+            'vms_mb': round(mem_info.vms / (1024 * 1024), 2),
+            'percent': round(process.memory_percent(), 2)
+        }
+    except Exception:
+        return {'rss_mb': None, 'percent': None, 'note': 'psutil unavailable'}
+
+
 # ============================================================================
 # 1. LIVENESS PROBE
 # ============================================================================
 
 @health_bp.route('/api/health/live', methods=['GET'])
+@health_bp.route('/health/live', methods=['GET'])
 def liveness_check():
     """
     Lightweight process liveness probe.
@@ -119,6 +135,8 @@ def liveness_check():
 # ============================================================================
 
 @health_bp.route('/api/health/ready', methods=['GET'])
+@health_bp.route('/health/ready', methods=['GET'])
+@health_bp.route('/health', methods=['GET'])
 def readiness_check():
     """
     Application readiness probe checking critical dependencies.
@@ -130,6 +148,7 @@ def readiness_check():
     db_health = _check_db_connectivity()
     models_health = _check_model_artifacts()
     worker_health = _check_worker_heartbeat()
+    mem_health = _check_memory_usage()
 
     has_groq = bool(os.getenv('GROQ_API_KEY'))
     has_sms = os.getenv('SMS_ENABLED', 'false').lower() in ('true', '1', 'yes')
@@ -140,6 +159,7 @@ def readiness_check():
             'status': 'unavailable',
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'database': {'status': 'disconnected', 'error': db_health.get('error')},
+            'memory': mem_health,
             'models': {
                 'flood_forecaster_ready': models_health['flood_forecaster_v1']['ready'],
                 'anomaly_detector_ready': models_health['water_quality_anomaly_detector_v1']['ready']
@@ -167,6 +187,7 @@ def readiness_check():
             'status': 'connected',
             'latency_ms': db_health.get('latency_ms')
         },
+        'memory': mem_health,
         'models': {
             'flood_forecaster_ready': models_health['flood_forecaster_v1']['ready'],
             'anomaly_detector_ready': models_health['water_quality_anomaly_detector_v1']['ready'],

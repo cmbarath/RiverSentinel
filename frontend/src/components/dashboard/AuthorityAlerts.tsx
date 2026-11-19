@@ -36,7 +36,11 @@ interface AlertEvent {
     id: string;
     event_type: string;
     actor_id: string | null;
-    metadata: Record<string, any>;
+    metadata?: {
+        notes?: string;
+        reason?: string;
+        [key: string]: unknown;
+    };
     created_at: string;
 }
 
@@ -182,8 +186,9 @@ export default function AuthorityAlerts() {
             } else {
                 setActionFeedback(`Error: ${data.message || "Failed to acknowledge"}`);
             }
-        } catch (err: any) {
-            setActionFeedback(`Error: ${err.message}`);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setActionFeedback(`Error: ${msg}`);
         } finally {
             setActionLoading(false);
         }
@@ -214,8 +219,9 @@ export default function AuthorityAlerts() {
             } else {
                 setActionFeedback(`Error: ${data.message || "Failed to resolve"}`);
             }
-        } catch (err: any) {
-            setActionFeedback(`Error: ${err.message}`);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setActionFeedback(`Error: ${msg}`);
         } finally {
             setActionLoading(false);
         }
@@ -237,8 +243,9 @@ export default function AuthorityAlerts() {
             } else {
                 setOutboxMessage(`Outbox error: ${data.message}`);
             }
-        } catch (err: any) {
-            setOutboxMessage(`Worker invocation error: ${err.message}`);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setOutboxMessage(`Worker invocation error: ${msg}`);
         } finally {
             setOutboxRunning(false);
         }

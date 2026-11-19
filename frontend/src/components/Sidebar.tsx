@@ -2,9 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-const Sidebar = ({ tabs, activeTab, setActiveTab }: { tabs: any[], activeTab: string, setActiveTab: (id: string) => void }) => {
+export interface SidebarTab {
+    id: string;
+    label: string;
+    icon: string;
+    [key: string]: unknown;
+}
+
+const Sidebar = ({ tabs, activeTab, setActiveTab }: { tabs: SidebarTab[], activeTab: string, setActiveTab: (id: string) => void }) => {
     return (
         <div style={{ width: '280px', height: '100vh', background: 'white', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 40 }}>
             <div style={{ padding: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, fontSize: '1.25rem' }}>

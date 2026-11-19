@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
@@ -29,15 +29,20 @@ const DEFAULT_STATIONS: MonitoringStation[] = [
     { id: "4", station_code: "STN-VAR-RAJG-04", station_name: "Rajghat Monitoring Station", latitude: 25.3267, longitude: 83.0335, status: "planned", location_name: "Rajghat, Varanasi", warning_water_level_m: 70.26, danger_water_level_m: 71.26 },
 ];
 
+const emptySubscribe = () => () => {};
+
 const InteractiveMap = () => {
-    const [isClient, setIsClient] = useState(false);
+    const isClient = useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false
+    );
     const [stations, setStations] = useState<MonitoringStation[]>(DEFAULT_STATIONS);
     const [loadingStations, setLoadingStations] = useState(true);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
     useEffect(() => {
-        setIsClient(true);
         // Fetch real monitoring stations from River Sentinel backend API
         fetch(`${backendUrl}/api/v1/stations`)
             .then(res => res.json())

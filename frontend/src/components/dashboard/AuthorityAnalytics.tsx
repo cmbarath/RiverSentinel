@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend
@@ -82,7 +82,7 @@ export default function AuthorityAnalytics() {
     const [loading, setLoading] = useState<boolean>(true);
     const [authError, setAuthError] = useState<string | null>(null);
 
-    const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
         try {
             const { data } = await supabase.auth.getSession();
             const token = data?.session?.access_token;
@@ -93,9 +93,9 @@ export default function AuthorityAnalytics() {
             // Ignore session retrieval error
         }
         return {};
-    };
+    }, []);
 
-    const fetchAnalyticsData = async () => {
+    const fetchAnalyticsData = useCallback(async () => {
         setLoading(true);
         setAuthError(null);
         try {
@@ -126,17 +126,18 @@ export default function AuthorityAnalytics() {
                 const stnData = await stnRes.json();
                 setStations(stnData.stations || []);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error fetching authority analytics:", err);
-            setAuthError(err.message || "Failed to load authority analytics.");
+            const msg = err instanceof Error ? err.message : "Failed to load authority analytics.";
+            setAuthError(msg);
         } finally {
             setLoading(false);
         }
-    };
+    }, [getAuthHeaders]);
 
     useEffect(() => {
         fetchAnalyticsData();
-    }, []);
+    }, [fetchAnalyticsData]);
 
     // Format Station Status Distribution for Pie Chart
     const stationPieData = React.useMemo(() => {

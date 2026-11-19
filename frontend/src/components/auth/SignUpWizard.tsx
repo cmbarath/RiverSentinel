@@ -102,9 +102,10 @@ const SignUpWizard = () => {
                     router.push("/login");
                 }, 2500);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Signup exception:", err);
-            setErrorMessage(err.message || "An unexpected error occurred during signup.");
+            const msg = err instanceof Error ? err.message : "An unexpected error occurred during signup.";
+            setErrorMessage(msg);
         } finally {
             setLoading(false);
         }

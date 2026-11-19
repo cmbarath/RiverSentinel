@@ -49,9 +49,10 @@ const LoginPage = () => {
                     router.push('/citizen-dashboard');
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Login exception:", err);
-            setErrorMessage(err.message || "An unexpected error occurred during login.");
+            const msg = err instanceof Error ? err.message : "An unexpected error occurred during login.";
+            setErrorMessage(msg);
         } finally {
             setLoading(false);
         }

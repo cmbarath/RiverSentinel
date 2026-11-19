@@ -97,7 +97,7 @@ export default function SafetyChecker() {
                     const activeStn = data.stations.find((s: Station) => s.status === 'active') || data.stations[0];
                     setSelectedStationId(activeStn.id);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error loading stations:", err);
                 if (isMounted) setError("Failed to load monitoring stations.");
             } finally {
@@ -126,10 +126,11 @@ export default function SafetyChecker() {
                 if (isMounted) {
                     setEvaluation(data);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error evaluating station safety:", err);
                 if (isMounted) {
-                    setError(err.message || "Failed to evaluate station water safety.");
+                    const msg = err instanceof Error ? err.message : "Failed to evaluate station water safety.";
+                    setError(msg);
                     setEvaluation(null);
                 }
             } finally {

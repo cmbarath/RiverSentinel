@@ -52,11 +52,20 @@ interface NotificationPreferences {
     consent_timestamp: string | null;
 }
 
+interface PublicAlertItem {
+    id: string;
+    title: string;
+    severity: string;
+    description: string;
+    last_triggered_at: string;
+    [key: string]: unknown;
+}
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 export const Notifications = () => {
     const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);
-    const [publicAlerts, setPublicAlerts] = useState<any[]>([]);
+    const [publicAlerts, setPublicAlerts] = useState<PublicAlertItem[]>([]);
     const [unreadCount, setUnreadCount] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -387,8 +396,9 @@ export const Profile = () => {
             } else {
                 setPrefsMessage(`Error: ${d.message || "Failed to save preferences"}`);
             }
-        } catch (err: any) {
-            setPrefsMessage(`Error: ${err.message}`);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setPrefsMessage(`Error: ${msg}`);
         } finally {
             setSavingPrefs(false);
         }

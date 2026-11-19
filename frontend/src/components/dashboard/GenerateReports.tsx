@@ -2,8 +2,30 @@
 
 import React, { useState, useEffect } from "react";
 
+interface FormalReportSummary {
+    status: string;
+    agency: string;
+    generated_at: string;
+    active_alerts: number;
+    report_summary: {
+        total: number;
+        resolution_rate: number;
+        verified?: number;
+        rejected?: number;
+        [key: string]: unknown;
+    };
+    sensor_summary: {
+        avg_ph: number | string;
+        avg_do: number | string;
+        avg_turbidity: number | string;
+        trend?: string;
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+}
+
 const GenerateReports = () => {
-    const [summary, setSummary] = useState<any>(null);
+    const [summary, setSummary] = useState<FormalReportSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchSummary = async () => {
@@ -130,24 +152,24 @@ const GenerateReports = () => {
                         <div>
                             <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
                                 Total of <strong>{summary.report_summary.total}</strong> pollution incidents were reported by public participants. 
-                                Authorities have successfully processed <strong>{summary.report_summary.verified + summary.report_summary.rejected}</strong> cases, 
+                                Authorities have successfully processed <strong>{(summary.report_summary.verified || 0) + (summary.report_summary.rejected || 0)}</strong> cases, 
                                 resulting in a current verification and response index of <strong>{summary.report_summary.resolution_rate}%</strong>.
                             </p>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                                 <span>Verified Reports</span>
-                                <span style={{ fontWeight: 700 }}>{summary.report_summary.verified}</span>
+                                <span style={{ fontWeight: 700 }}>{summary.report_summary.verified ?? 0}</span>
                             </div>
                             <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{ width: `${(summary.report_summary.verified / summary.report_summary.total) * 100}%`, height: '100%', background: '#10b981' }}></div>
+                                <div style={{ width: `${((summary.report_summary.verified || 0) / (summary.report_summary.total || 1)) * 100}%`, height: '100%', background: '#10b981' }}></div>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                                 <span>Rejected Reports</span>
-                                <span style={{ fontWeight: 700 }}>{summary.report_summary.rejected}</span>
+                                <span style={{ fontWeight: 700 }}>{summary.report_summary.rejected ?? 0}</span>
                             </div>
                             <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{ width: `${(summary.report_summary.rejected / summary.report_summary.total) * 100}%`, height: '100%', background: '#ef4444' }}></div>
+                                <div style={{ width: `${(((summary.report_summary.rejected || 0)) / (summary.report_summary.total || 1)) * 100}%`, height: '100%', background: '#ef4444' }}></div>
                             </div>
                         </div>
                     </div>

@@ -5,7 +5,6 @@ import Link from "next/link";
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {

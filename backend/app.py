@@ -35,7 +35,17 @@ START_TIME = time.time()
 def create_app():
     """Application factory for River Sentinel Flask backend."""
     app = Flask(__name__)
-    CORS(app, resources={r"/*": {"origins": "*"}})
+
+    # Configurable CORS origins for production deployment
+    frontend_env = os.getenv('FRONTEND_URL', '*')
+    if frontend_env == '*' or not frontend_env.strip():
+        cors_origins = '*'
+    else:
+        cors_origins = [o.strip() for o in frontend_env.split(',') if o.strip()]
+    CORS(app, resources={r"/*": {"origins": cors_origins}})
+
+    # Maximum payload size (16 MB for high-resolution citizen pollution uploads)
+    app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
 
     # Initialize structured logging middleware & global sanitized error handlers
     init_logging_middleware(app)

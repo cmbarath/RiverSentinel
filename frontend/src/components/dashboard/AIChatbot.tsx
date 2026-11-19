@@ -2,27 +2,54 @@
 
 import React, { useState, useRef, useEffect } from "react";
 
+// Language-specific greeting messages
+const greetings: Record<string, string> = {
+    "English": "Namaste! I am your RiverSentinel AI Assistant. How can I help you today with Ganga's water quality or safety?",
+    "हिन्दी": "नमस्ते! मैं आपका RiverSentinel AI सहायक हूं। मैं आज गंगा की जल गुणवत्ता या सुरक्षा के बारे में आपकी कैसे मदद कर सकता हूं?",
+    "भोजपुरी": "प्रणाम! हम रउरा RiverSentinel AI सहायक बानी। आज गंगा के पानी के गुणवत्ता भा सुरक्षा के बारे में हम रउरा के कइसे मदद कर सकीलें?",
+    "বাংলা": "নমস্কার! আমি আপনার RiverSentinel AI সহায়ক। আজ গঙ্গার জলের গুণমান বা সুরক্ষা সম্পর্কে আমি কীভাবে আপনাকে সাহায্য করতে পারি?"
+};
+
+// Language codes for speech recognition
+const languageCodes: Record<string, string> = {
+    "English": "en-US",
+    "हिन्दी": "hi-IN",
+    "भोजपुरी": "hi-IN",  // Use Hindi for Bhojpuri
+    "বাংলা": "bn-IN"
+};
+
+interface SpeechRecognitionResultItem {
+    transcript: string;
+}
+
+interface SpeechRecognitionResultList {
+    [index: number]: SpeechRecognitionResultItem[];
+}
+
+interface SpeechRecognitionEventLike {
+    results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorLike {
+    error: string;
+}
+
+interface WebkitSpeechRecognitionLike {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+    onerror: ((event: SpeechRecognitionErrorLike) => void) | null;
+    onend: (() => void) | null;
+    start: () => void;
+    stop: () => void;
+}
+
 const AIChatbot = () => {
     const [language, setLanguage] = useState("English");
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [speakingMessageIndex, setSpeakingMessageIndex] = useState<number | null>(null);
-
-    // Language-specific greeting messages
-    const greetings: Record<string, string> = {
-        "English": "Namaste! I am your RiverSentinel AI Assistant. How can I help you today with Ganga's water quality or safety?",
-        "हिन्दी": "नमस्ते! मैं आपका RiverSentinel AI सहायक हूं। मैं आज गंगा की जल गुणवत्ता या सुरक्षा के बारे में आपकी कैसे मदद कर सकता हूं?",
-        "भोजपुरी": "प्रणाम! हम रउरा RiverSentinel AI सहायक बानी। आज गंगा के पानी के गुणवत्ता भा सुरक्षा के बारे में हम रउरा के कइसे मदद कर सकीलें?",
-        "বাংলা": "নমস্কার! আমি আপনার RiverSentinel AI সহায়ক। আজ গঙ্গার জলের গুণমান বা সুরক্ষা সম্পর্কে আমি কীভাবে আপনাকে সাহায্য করতে পারি?"
-    };
-
-    // Language codes for speech recognition
-    const languageCodes: { [key: string]: string } = {
-        "English": "en-US",
-        "हिन्दी": "hi-IN",
-        "भोजपुरी": "hi-IN",  // Use Hindi for Bhojpuri
-        "বাংলা": "bn-IN"
-    };
 
     const [messages, setMessages] = useState([
         { role: "bot", text: greetings["English"] }
@@ -31,7 +58,7 @@ const AIChatbot = () => {
     const [loading, setLoading] = useState(false);
     const [chatbotAvailable, setChatbotAvailable] = useState<boolean | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const recognitionRef = useRef<any>(null);
+    const recognitionRef = useRef<WebkitSpeechRecognitionLike | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,32 +90,46 @@ const AIChatbot = () => {
 
     // Update greeting when language changes
     useEffect(() => {
-        setMessages([{ role: "bot", text: greetings[language] }]);
+        const timer = setTimeout(() => {
+            setMessages(prev => {
+                if (prev.length <= 1) {
+                    return [{ role: "bot", text: greetings[language] || greetings["English"] }];
+                }
+                return prev;
+            });
+        }, 0);
+        return () => clearTimeout(timer);
     }, [language]);
 
     // Initialize speech recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognitionRef.current = new SpeechRecognition();
-                recognitionRef.current.continuous = false;
-                recognitionRef.current.interimResults = false;
+            const win = window as unknown as {
+                SpeechRecognition?: new () => WebkitSpeechRecognitionLike;
+                webkitSpeechRecognition?: new () => WebkitSpeechRecognitionLike;
+            };
+            const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
+            if (SpeechRecognitionClass) {
+                const recognition = new SpeechRecognitionClass();
+                recognition.continuous = false;
+                recognition.interimResults = false;
 
-                recognitionRef.current.onresult = (event: any) => {
+                recognition.onresult = (event: SpeechRecognitionEventLike) => {
                     const transcript = event.results[0][0].transcript;
                     setInput(transcript);
                     setIsListening(false);
                 };
 
-                recognitionRef.current.onerror = (event: any) => {
+                recognition.onerror = (event: SpeechRecognitionErrorLike) => {
                     console.error('Speech recognition error:', event.error);
                     setIsListening(false);
                 };
 
-                recognitionRef.current.onend = () => {
+                recognition.onend = () => {
                     setIsListening(false);
                 };
+
+                recognitionRef.current = recognition;
             }
         }
     }, []);
@@ -96,7 +137,7 @@ const AIChatbot = () => {
     // Update recognition language when language changes
     useEffect(() => {
         if (recognitionRef.current) {
-            recognitionRef.current.lang = languageCodes[language];
+            recognitionRef.current.lang = languageCodes[language] || "en-US";
         }
     }, [language]);
 

@@ -53,6 +53,7 @@ interface ReadingsResponse {
         water_level?: StatSummary;
         ec?: StatSummary;
         do?: StatSummary;
+        [key: string]: StatSummary | number | undefined;
     };
     provenance_breakdown: {
         real_sensor?: number;
@@ -98,7 +99,7 @@ export default function HistoricalTrends() {
                     const activeStn = data.stations.find((s: Station) => s.status === 'active') || data.stations[0];
                     setSelectedStationId(activeStn.id);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error loading stations:", err);
                 if (isMounted) setError("Failed to load station directory from backend.");
             } finally {
@@ -128,10 +129,11 @@ export default function HistoricalTrends() {
                 if (isMounted) {
                     setReadingsData(data);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error loading readings:", err);
                 if (isMounted) {
-                    setError(err.message || "Failed to load telemetry data.");
+                    const msg = err instanceof Error ? err.message : "Failed to load telemetry data.";
+                    setError(msg);
                     setReadingsData(null);
                 }
             } finally {
@@ -169,6 +171,7 @@ export default function HistoricalTrends() {
 
     const currentStation = stations.find(s => s.id === selectedStationId);
     const stats = readingsData?.summary_statistics;
+    const paramStat = stats && selectedParam in stats ? (stats[selectedParam] as StatSummary | undefined) : undefined;
     const provenanceCounts = readingsData?.provenance_breakdown;
 
     const handleExportCSV = () => {
@@ -489,8 +492,8 @@ export default function HistoricalTrends() {
                         <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
                             <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Parameter Average</div>
                             <div style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0.25rem 0', color: '#0284c7' }}>
-                                {(stats as any)?.[selectedParam]?.avg !== undefined
-                                    ? `${(stats as any)[selectedParam].avg.toFixed(2)} ${PARAMETERS.find(p => p.key === selectedParam)?.unit}`
+                                {paramStat?.avg !== undefined
+                                    ? `${paramStat.avg.toFixed(2)} ${PARAMETERS.find(p => p.key === selectedParam)?.unit}`
                                     : '—'}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Computed from {stats?.count || 0} observations</div>
@@ -499,8 +502,8 @@ export default function HistoricalTrends() {
                         <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
                             <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Minimum Recorded</div>
                             <div style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0.25rem 0', color: '#059669' }}>
-                                {(stats as any)?.[selectedParam]?.min !== undefined
-                                    ? `${(stats as any)[selectedParam].min.toFixed(2)} ${PARAMETERS.find(p => p.key === selectedParam)?.unit}`
+                                {paramStat?.min !== undefined
+                                    ? `${paramStat.min.toFixed(2)} ${PARAMETERS.find(p => p.key === selectedParam)?.unit}`
                                     : '—'}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Lowest valid observation in timeframe</div>
@@ -509,8 +512,8 @@ export default function HistoricalTrends() {
                         <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
                             <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Maximum Recorded</div>
                             <div style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0.25rem 0', color: '#d97706' }}>
-                                {(stats as any)?.[selectedParam]?.max !== undefined
-                                    ? `${(stats as any)[selectedParam].max.toFixed(2)} ${PARAMETERS.find(p => p.key === selectedParam)?.unit}`
+                                {paramStat?.max !== undefined
+                                    ? `${paramStat.max.toFixed(2)} ${PARAMETERS.find(p => p.key === selectedParam)?.unit}`
                                     : '—'}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Peak observation in timeframe</div>
