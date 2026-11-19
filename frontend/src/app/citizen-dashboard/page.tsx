@@ -75,16 +75,20 @@ export default function CitizenDashboard() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <span
+                            <button
+                                type="button"
+                                aria-label="Open notifications tab"
                                 onClick={() => setActiveTab('notifications')}
-                                style={{ cursor: 'pointer', fontSize: '1.25rem' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', padding: '0.25rem' }}
                                 title="Notifications"
                             >
                                 🔔
-                            </span>
-                            <div
+                            </button>
+                            <button
+                                type="button"
+                                aria-label={`Logged in as ${userName}. Open profile settings`}
                                 onClick={() => setActiveTab('profile')}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', padding: '0.4rem 0.9rem', borderRadius: '999px', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', padding: '0.4rem 0.9rem', borderRadius: '999px', border: '1px solid #e2e8f0', cursor: 'pointer', font: 'inherit' }}
                             >
                                 <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem' }}>
                                     {userInitial}
@@ -92,7 +96,7 @@ export default function CitizenDashboard() {
                                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
                                     {userName}
                                 </div>
-                            </div>
+                            </button>
                         </div>
                     </div>
                 </header>

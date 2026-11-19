@@ -27,7 +27,7 @@ export default function DatasetUpload() {
                 if (missing.length === 0) {
                     setValidationStatus({
                         valid: true,
-                        message: `Schema validated successfully (${lines.length - 1} records detected). Staged for Phase 6 pipeline.`,
+                        message: `Schema validated successfully (${lines.length - 1} records detected). Staged for validation pipeline.`,
                         rowCount: lines.length - 1
                     });
                 } else {
@@ -43,7 +43,7 @@ export default function DatasetUpload() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {/* Phase 6 ML Pipeline Notice */}
+            {/* ML Pipeline Notice */}
             <div style={{
                 padding: '1.25rem',
                 borderRadius: '0.75rem',
@@ -54,9 +54,9 @@ export default function DatasetUpload() {
                 lineHeight: 1.5
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem' }}>
-                    ℹ️ ML Data Staging & Model Ingestion (Phase 6 Architecture)
+                    ℹ️ ML Data Staging & Model Governance Engine
                 </div>
-                External dataset ingestion for retraining Random Forest models (Flood Susceptibility & Water Quality Index) is managed under <strong>Phase 6 (Machine Learning & Training Pipeline)</strong>.
+                External dataset ingestion for retraining models (Ridge Flood Forecaster & Water Quality Index) is governed under the <strong>Machine Learning Model Governance & Validation Framework</strong>.
                 Uploaded files must conform to Schema 2.0 specifications with strict outlier boundary validation before promotion to production inference.
             </div>
 
@@ -152,9 +152,9 @@ export default function DatasetUpload() {
                                 cursor: (!file || !validationStatus?.valid) ? 'not-allowed' : 'pointer',
                                 fontWeight: 600
                             }}
-                            onClick={() => alert("Dataset staged locally. Ingestion into training storage will occur in Phase 6.")}
+                            onClick={() => alert("Dataset staged locally. Ingestion into training storage requires model governance approval.")}
                         >
-                            Stage for Phase 6 Training Pipeline
+                            Stage for Model Training & Validation
                         </button>
                     </div>
                 </div>

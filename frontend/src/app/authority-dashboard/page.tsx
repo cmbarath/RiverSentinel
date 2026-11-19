@@ -15,14 +15,14 @@ import { supabase } from "@/lib/supabaseClient";
 
 const tabs = [
     { id: "command", label: "Command Center", icon: "🏢" },
-    { id: "alerts", label: "Alert Center (Phase 5)", icon: "🚨" },
+    { id: "alerts", label: "Alert Center", icon: "🚨" },
     { id: "live", label: "Live Sensor Data", icon: "📊" },
     { id: "map", label: "Flood Susceptibility Map", icon: "📍" },
     { id: "manage", label: "Manage Reports", icon: "🛡️" },
     { id: "analytics", label: "Analytics", icon: "📈" },
     { id: "generate", label: "Generate Reports", icon: "📄" },
-    { id: "sms", label: "SMS Gateway (Phase 5)", icon: "📱" },
-    { id: "upload", label: "ML Staging (Phase 6)", icon: "📤" },
+    { id: "sms", label: "SMS Broadcast Gateway", icon: "📱" },
+    { id: "upload", label: "ML Model Staging", icon: "📤" },
 ];
 
 export default function AuthorityDashboard() {

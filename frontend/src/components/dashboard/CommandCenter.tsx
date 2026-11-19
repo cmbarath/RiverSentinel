@@ -162,7 +162,7 @@ export default function CommandCenter() {
             if (action === 'sms') {
                 setStatus({
                     type: 'info',
-                    msg: 'Notice: Cellular SMS Gateway is pending Phase 5 hardware provisioning. Direct broadcast disabled.'
+                    msg: 'Notice: Cellular SMS Gateway runs in simulated outbox mode. Configure carrier credentials for live telecom dispatch.'
                 });
                 setLoading(null);
                 return;
@@ -366,7 +366,7 @@ export default function CommandCenter() {
                             onClick={() => handleAction('sms')}
                             disabled={!!loading}
                         >
-                            <span>📢</span> Cellular SMS Broadcast (Phase 5)
+                            <span>📢</span> Cellular SMS Broadcast
                         </button>
                     </div>
                 </div>

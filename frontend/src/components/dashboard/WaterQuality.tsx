@@ -58,7 +58,7 @@ const WaterQuality = () => {
         { label: 'Turbidity', value: readings.turbidity.toFixed(0), unit: 'NTU', status: readings.turbidity < 10 ? 'Excellent' : 'Moderate', color: readings.turbidity < 10 ? '#3b82f6' : '#f59e0b' },
         { label: 'Temperature', value: readings.temperature.toFixed(1), unit: '°C', status: readings.temperature_error ? 'Error' : 'Normal', color: readings.temperature_error ? '#ef4444' : '#6366f1' },
         { label: 'Conductivity', value: readings.ec.toFixed(0), unit: 'µS/cm', status: readings.ec < 500 ? 'Good' : 'High', color: readings.ec < 500 ? '#10b981' : '#ef4444' },
-        { label: 'BOD', value: readings.bod.toFixed(1), unit: 'mg/L', status: readings.bod < 30 ? 'Good' : 'High', color: readings.bod < 30 ? '#10b981' : '#f59e0b' },
+        { label: 'BOD', value: readings.bod.toFixed(1), unit: 'mg/L', status: readings.bod <= 3 ? 'Good (Class B)' : 'Exceeds Class B', color: readings.bod <= 3 ? '#10b981' : '#f59e0b' },
         { label: 'COD', value: readings.cod.toFixed(1), unit: 'mg/L', status: readings.cod < 250 ? 'Good' : 'High', color: readings.cod < 250 ? '#10b981' : '#f59e0b' },
         { label: 'Water Level', value: readings.water_level.toFixed(2), unit: 'm', status: readings.water_level_error ? 'Error' : readings.water_level > 70 ? 'High' : 'Normal', color: readings.water_level_error ? '#ef4444' : readings.water_level > 70 ? '#f59e0b' : '#8b5cf6' },
     ];

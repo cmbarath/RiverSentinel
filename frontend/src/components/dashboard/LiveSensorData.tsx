@@ -10,7 +10,7 @@ const LiveSensorData = () => {
 
     const handleExport = () => {
         // Trigger the backend export endpoint
-        window.location.href = `${BACKEND_URL}/api/authority/export-data`;
+        window.location.href = `${BACKEND_URL}/api/v1/export/sensor-data`;
     };
 
     const getProvenanceBadge = () => {
@@ -27,7 +27,7 @@ const LiveSensorData = () => {
         { label: "Humidity", value: readings.humidity.toFixed(1), unit: "%", status: 'SAFE', color: 'green' },
         { label: "EC", value: readings.ec.toFixed(0), unit: "µS/cm", status: readings.ec > 0 ? 'SAFE' : 'ERROR', color: readings.ec > 0 ? 'green' : 'red' },
         { label: "Water Level", value: readings.water_level.toFixed(2), unit: "m", status: readings.water_level_error ? 'ERROR' : readings.water_level > 70 ? 'CAUTION' : 'SAFE', color: readings.water_level_error ? 'red' : readings.water_level > 70 ? 'orange' : 'green' },
-        { label: "BOD", value: readings.bod.toFixed(1), unit: "mg/L", status: readings.bod < 30 ? 'SAFE' : 'CAUTION', color: readings.bod < 30 ? 'green' : 'orange' },
+        { label: "BOD", value: readings.bod.toFixed(1), unit: "mg/L", status: readings.bod <= 3 ? 'SAFE' : readings.bod <= 5 ? 'CAUTION' : 'UNSAFE', color: readings.bod <= 3 ? 'green' : readings.bod <= 5 ? 'orange' : 'red' },
         { label: "COD", value: readings.cod.toFixed(1), unit: "mg/L", status: readings.cod < 250 ? 'SAFE' : 'CAUTION', color: readings.cod < 250 ? 'green' : 'orange' },
         { label: "DO", value: readings.do.toFixed(1), unit: "mg/L", status: readings.do > 5 ? 'SAFE' : 'CAUTION', color: readings.do > 5 ? 'green' : 'orange' },
     ];

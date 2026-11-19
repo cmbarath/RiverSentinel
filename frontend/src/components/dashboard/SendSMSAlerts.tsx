@@ -77,7 +77,7 @@ export default function SendSMSAlerts() {
                 lineHeight: 1.5
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem' }}>
-                    ✅ Telephony Subsystem & Outbox Engine (Phase 5 Active)
+                    ✅ Telephony Subsystem & Outbox Engine Active
                 </div>
                 The transactional notification outbox and telephony interface are active. By default, <code>SMS_ENABLED=false</code> protects external telephony budgets, running safely in <strong>MockSMSProvider</strong> mode. 
                 Simulated sensor telemetry is strictly suppressed from sending live cellular SMS.

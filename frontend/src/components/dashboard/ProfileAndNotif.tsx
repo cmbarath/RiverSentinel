@@ -485,10 +485,10 @@ export const Profile = () => {
                 </div>
             </div>
 
-            {/* Notification Preferences Card (Phase 5) */}
+            {/* Notification Preferences Card */}
             <div className="card">
                 <h3 style={{ margin: "0 0 0.5rem 0", fontWeight: 700, fontSize: "1.1rem" }}>
-                    Notification & Alert Preferences (Phase 5)
+                    Notification & Alert Preferences
                 </h3>
                 <p style={{ margin: "0 0 1.5rem 0", fontSize: "0.85rem", color: "#64748b" }}>
                     Configure dispatch channels for environmental alerts. Under TRAI regulations, cellular SMS dispatch requires verified phone ownership and explicit opt-in consent.

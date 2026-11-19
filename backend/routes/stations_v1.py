@@ -741,12 +741,6 @@ def export_filtered_sensor_data_v1():
     return response
 
 
-@stations_v1_bp.route('/api/authority/export-data', methods=['GET'])
-@require_role('authority_admin', 'field_officer')
-def export_authority_data_v1():
-    return export_filtered_sensor_data_v1()
-
-
 # ============================================================================
 # 6. DYNAMIC SCIENTIFIC STATION SAFETY EVALUATION
 # ============================================================================

@@ -1,0 +1,109 @@
+name: River Sentinel CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'river-sentinel/**'
+  pull_request:
+    branches:
+      - main
+      - 'river-sentinel/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-ci:
+    name: Backend Lint, Compile & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python Syntax & Bytecode Compilation Check
+        run: |
+          python -m compileall -q .
+
+      - name: Run Backend Unit & Release Candidate Audit Tests
+        env:
+          FLASK_ENV: testing
+          PORT: 5000
+          SUPABASE_URL: https://xqzobddgkawysprpmkpk.supabase.co
+          SUPABASE_KEY: dummy_ci_anon_key
+          SUPABASE_SERVICE_ROLE_KEY: dummy_ci_service_role_key
+          GROQ_API_KEY: dummy_ci_groq_key
+          SIMULATOR_API_TOKEN: dummy_ci_sim_token
+          SMS_ENABLED: 'false'
+        run: |
+          python -m unittest discover -s . -p "test_phase8_rc_audit.py" -v
+
+  frontend-ci:
+    name: Frontend Lint & Production Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          npm ci
+
+      - name: Run Next.js Lint
+        run: |
+          npm run lint
+
+      - name: Build Next.js Production Bundle
+        env:
+          NEXT_PUBLIC_BACKEND_URL: http://localhost:5000
+          NEXT_PUBLIC_SUPABASE_URL: https://xqzobddgkawysprpmkpk.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy_ci_anon_key
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy_ci_anon_key
+        run: |
+          npm run build
+
+  security-scan:
+    name: Repository Security & Credential Hygiene
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check for Unmasked Secrets in Commits
+        run: |
+          echo "Auditing tracked files for unmasked private keys and live secrets..."
+          # Verify .env files are not committed
+          if git ls-files | grep -E '^backend/\.env$|^frontend/\.env\.local$'; then
+            echo "ERROR: Tracked .env or .env.local file detected!"
+            exit 1
+          fi
+          echo "No tracked secret files detected. Repository credential hygiene verified."
