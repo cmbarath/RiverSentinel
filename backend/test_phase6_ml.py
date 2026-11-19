@@ -165,8 +165,8 @@ class TestFloodForecastingAndDataReconciliation(unittest.TestCase):
 
         with open(meta_path) as f:
             meta = json.load(f)
-        self.assertEqual(meta['version'], '1.0.0')
-        self.assertEqual(meta['status'], 'experimental')
+        self.assertIn(meta.get('version', ''), ['1.0.0', '1.1.0'])
+        self.assertIn(meta.get('operational_status') or meta.get('status'), ['experimental', 'research_only'])
         self.assertIn('known_limitations', meta)
 
 
@@ -199,9 +199,9 @@ class TestPredictionsAPIEndpoints(unittest.TestCase):
         self.assertIn('sensor_data', data)
         self.assertIn('prediction_time', data)
 
-        # Phase 6 provenance fields
+        # Phase 6/6.1 provenance fields
         self.assertEqual(data['model_version'], 'flood_stage_forecaster_v1')
-        self.assertEqual(data['prediction_status'], 'experimental')
+        self.assertIn(data['prediction_status'], ['experimental', 'research_only'])
         self.assertIn('stage_forecast', data)
         sf = data['stage_forecast']
         self.assertEqual(sf['forecast_horizon'], '1_day_ahead')

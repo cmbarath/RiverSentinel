@@ -1,7 +1,9 @@
 """
 Predictions & ML Routes Blueprint
-Handles Random Forest river stage forecasting, CPCB Class B water quality evaluation,
+Handles Ridge/RF river stage forecasting, CPCB Class B water quality evaluation,
 physical sensor anomaly detection, and Open-Meteo weather fetching.
+All models are strictly governed with explicit provenance, research-only/experimental
+safety boundaries, and emergency alert suppression.
 """
 
 from flask import Blueprint, jsonify, request
@@ -31,7 +33,7 @@ except Exception as e:
 # ---------------------------------------------------------------------------
 # ML Artifact Initialization (Legacy Models & Phase 6 Versioned Models)
 # ---------------------------------------------------------------------------
-# Legacy Models
+# Legacy Retired Models (Preserved for forensic reproducibility only)
 legacy_flood_model = None
 legacy_flood_scaler = None
 legacy_wq_model = None
@@ -43,7 +45,7 @@ try:
     if os.path.exists(f_path) and os.path.exists(fs_path):
         legacy_flood_model = joblib.load(f_path)
         legacy_flood_scaler = joblib.load(fs_path)
-        print("[INFO] Legacy flood model loaded (features: 6)")
+        print("[INFO] Legacy flood model loaded (retired baseline)")
 except Exception as e:
     print(f"[WARNING] Legacy flood model load failed: {e}")
 
@@ -53,7 +55,7 @@ try:
     if os.path.exists(w_path) and os.path.exists(ws_path):
         legacy_wq_model = joblib.load(w_path)
         legacy_wq_scaler = joblib.load(ws_path)
-        print("[INFO] Legacy water quality model loaded (features: 5)")
+        print("[INFO] Legacy water quality model loaded (retired baseline)")
 except Exception as e:
     print(f"[WARNING] Legacy water quality model load failed: {e}")
 
@@ -70,7 +72,7 @@ try:
     if os.path.exists(fstage_path) and os.path.exists(fstage_sc_path):
         flood_stage_model = joblib.load(fstage_path)
         flood_stage_scaler = joblib.load(fstage_sc_path)
-        print("[INFO] Phase 6 flood stage forecaster v1 loaded (features: 17)")
+        print("[INFO] Phase 6.1 flood stage forecaster v1 loaded (Ridge Regressor, research_only)")
 except Exception as e:
     print(f"[WARNING] Phase 6 flood stage model load failed: {e}")
 
@@ -80,7 +82,7 @@ try:
     if os.path.exists(wq_anom_path) and os.path.exists(wq_anom_sc_path):
         wq_anomaly_detector = joblib.load(wq_anom_path)
         wq_anomaly_scaler = joblib.load(wq_anom_sc_path)
-        print("[INFO] Phase 6 water quality anomaly detector v1 loaded (features: 4)")
+        print("[INFO] Phase 6.1 water quality anomaly detector v1 loaded (experimental)")
 except Exception as e:
     print(f"[WARNING] Phase 6 water quality anomaly detector load failed: {e}")
 
@@ -137,8 +139,8 @@ def get_weather():
 def predict_flood_risk():
     """
     Execute flood risk evaluation and 1-day-ahead river stage forecasting.
-    Maintains backward compatibility with frontend contracts while reporting
-    rigorous Phase 6 provenance and CWC hydrological benchmark stages.
+    Governance: Classified as research_only with explicit semi-synthetic provenance.
+    Strictly quarantined from triggering emergency SMS or public alarms.
     """
     reading = get_latest_sensor_reading()
 
@@ -179,7 +181,7 @@ def predict_flood_risk():
             'prediction_status': 'model_unavailable'
         }), 503
 
-    # 1. Execute 1-Day-Ahead Stage Forecast (Phase 6 Model)
+    # 1. Execute 1-Day-Ahead Stage Forecast (Phase 6.1 Ridge Forecaster)
     forecasted_stage = None
     forecast_delta = None
     if flood_stage_model is not None and flood_stage_scaler is not None:
@@ -208,7 +210,7 @@ def predict_flood_risk():
         except Exception as e:
             print(f"[WARNING] Stage forecast inference failed: {e}")
 
-    # 2. Execute Legacy Probability Model (for backward compatibility)
+    # 2. Execute Legacy Probability Model (preserved for backward compatibility only)
     flood_prob = 0.05
     prediction_bin = 0
     if legacy_flood_model is not None and legacy_flood_scaler is not None:
@@ -296,12 +298,17 @@ def predict_flood_risk():
         },
         'prediction_time': datetime.now().strftime('%Y-%m-%dT%H:%M:%S+05:30'),
         'model_version': 'flood_stage_forecaster_v1' if flood_stage_model else 'legacy_flood_classifier_v0',
-        'prediction_status': 'experimental',
+        'prediction_status': 'research_only',
+        'data_provenance': 'semi_synthetic_research_series',
+        'is_official_cwc_gauge': False,
+        'alert_eligible': False,
         'stage_forecast': {
             'forecast_horizon': '1_day_ahead',
             'current_water_level_m': round(water_level, 2),
             'forecasted_water_level_m': round(forecasted_stage, 2) if forecasted_stage else None,
             'forecast_delta_m': forecast_delta,
+            'analytical_high_water_subset': bool(eval_stage >= 67.5),
+            'analytical_subset_note': '67.5 m is an internal analytical subset boundary, NOT an official CWC statutory flood warning stage.',
             'cwc_gauge_reference': {
                 'station': 'Varanasi (Rajghat / Malviya Bridge)',
                 'warning_stage_m': cwc_warning,
@@ -310,7 +317,7 @@ def predict_flood_risk():
                 'cwc_stage_status': cwc_status
             }
         },
-        'disclaimer': 'Statistical 1-day-ahead stage forecast from flood_stage_forecaster_v1 (experimental). Statutory flood alerts derive exclusively from official CWC gauge levels (70.26 m Warning, 71.26 m Danger).'
+        'disclaimer': 'Statistical 1-day-ahead stage forecast from flood_stage_forecaster_v1 (research_only, semi-synthetic provenance). Statutory flood alerts derive exclusively from official CWC gauge levels (70.26 m Warning, 71.26 m Danger).'
     })
 
 
@@ -319,6 +326,7 @@ def predict_water_quality():
     """
     Predict water quality screening, CPCB Class B compliance assessment,
     and physical sensor anomaly detection.
+    Governance: Anomaly detector is experimental and cannot trigger public alerts.
     """
     reading = get_latest_sensor_reading()
 
@@ -358,7 +366,7 @@ def predict_water_quality():
         }
         cpcb_eval = evaluate_cpcb_class_b_record(eval_record)
 
-    # 2. Physical Sensor Anomaly Detection (Phase 6 Model)
+    # 2. Physical Sensor Anomaly Detection (Phase 6.1 Experimental Model)
     anomaly_status = 'NORMAL'
     anomaly_score = None
     if wq_anomaly_detector is not None and wq_anomaly_scaler is not None:
@@ -456,6 +464,9 @@ def predict_water_quality():
         'physical_screening': {
             'anomaly_status': anomaly_status,
             'anomaly_score': anomaly_score,
+            'screening_status': 'experimental_screening_only',
+            'alert_eligible': False,
+            'screening_note': 'Experimental physical anomaly score. Never represents a confirmed pollution event or biological contamination.',
             'turbidity_status': 'NORMAL' if turbidity <= 100 else 'ELEVATED_INVESTIGATION',
             'conductivity_status': 'NORMAL' if ec <= 1500 else 'HIGH_CONDUCTIVITY'
         },
