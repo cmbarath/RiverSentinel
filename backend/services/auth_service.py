@@ -29,6 +29,22 @@ def _clean_cache():
         _AUTH_CACHE.pop(k, None)
 
 
+def invalidate_user_auth_cache(token: Optional[str] = None, user_id: Optional[str] = None):
+    """
+    Explicitly invalidate authentication cache for a specific token or user_id.
+    Ensures immediate revocation of cached credentials.
+    """
+    if token:
+        _AUTH_CACHE.pop(token, None)
+    if user_id:
+        keys_to_remove = [
+            k for k, v in _AUTH_CACHE.items()
+            if v.get('user', {}).get('id') == user_id or (v.get('profile') and v['profile'].get('id') == user_id)
+        ]
+        for k in keys_to_remove:
+            _AUTH_CACHE.pop(k, None)
+
+
 def verify_supabase_jwt(token: str) -> Optional[Dict[str, Any]]:
     """
     Verify Supabase JWT by querying Supabase Auth endpoint /auth/v1/user.
@@ -110,6 +126,10 @@ def require_auth(f):
             if cached and profile:
                 cached['profile'] = profile
 
+        # Check account active status
+        if profile and profile.get('is_active') is False:
+            return jsonify({'error': 'Unauthorized', 'message': 'Account is deactivated or revoked'}), 401
+
         # Default role fallback is 'citizen' if profile not yet populated
         role = profile.get('role', 'citizen') if profile else 'citizen'
 
@@ -124,13 +144,34 @@ def require_auth(f):
 def require_role(*allowed_roles):
     """
     Decorator: Requires user to be authenticated AND hold one of the specified roles.
+    For privileged operations, enforces fresh database profile verification from public.profiles
+    to prevent privilege persistence via stale 60-second in-memory caches.
     Example: @require_role('authority_admin') or @require_role('authority_admin', 'field_officer')
     """
     def decorator(f):
         @wraps(f)
         @require_auth
         def decorated_function(*args, **kwargs):
+            user = getattr(request, 'user', None)
+            token = extract_bearer_token()
+
+            # Privileged role operations require fresh verification from database to prevent stale cache attacks
+            if user and user.get('id'):
+                fresh_profile = get_user_profile(user['id'])
+                if fresh_profile:
+                    request.user_profile = fresh_profile
+                    request.user_role = fresh_profile.get('role', 'citizen')
+                    # Update cache to keep it in sync
+                    if token and token in _AUTH_CACHE:
+                        _AUTH_CACHE[token]['profile'] = fresh_profile
+
             user_role = getattr(request, 'user_role', 'citizen')
+            profile = getattr(request, 'user_profile', None)
+
+            # Check account active status
+            if profile and profile.get('is_active') is False:
+                return jsonify({'error': 'Unauthorized', 'message': 'Account is deactivated or revoked'}), 401
+
             if user_role not in allowed_roles:
                 return jsonify({
                     'error': 'Forbidden',

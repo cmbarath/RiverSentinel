@@ -11,7 +11,7 @@ import csv
 import random
 import time
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from services.supabase_service import (
     supabase_get, supabase_insert, supabase_update, execute_sql,
     get_sensor_summary, get_reports_summary
@@ -449,22 +449,60 @@ def trigger_alert():
 @authority_bp.route('/api/authority/generate-notice', methods=['POST'])
 @require_role('authority_admin')
 def generate_legal_notice():
-    """Generate legal notice document template."""
+    """
+    Generate draft environmental notice template for authorized regulatory review.
+    Explicitly labeled as DRAFT to ensure River Sentinel is not misrepresented
+    as an official statutory enforcement authority.
+    """
+    data = request.get_json(silent=True) or {}
+    target_entity = data.get('target_entity', 'INDUSTRIAL COMPLIANCE DIVISION / LOCAL BODIES')
+    violation_type = data.get('violation_type', 'Suspected Surface Water Quality Deviation')
+    location = data.get('location', 'Assi Ghat Monitoring Station, Varanasi')
+    incident_ref = data.get('incident_ref', f"INC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{random.randint(100, 999)}")
+
     notice_id = f"RS-NOT-2026-{random.randint(1000, 9999)}"
-    content = f"""RIVER SENTINEL – AUTHORITY LEGAL NOTICE
-Code: {notice_id}
-Date: {datetime.now().strftime("%B %d, %Y")}
+    now_utc = datetime.now(timezone.utc)
 
-TO: INDUSTRIAL COMPLIANCE DIVISION / LOCAL BODIES
-SUBJECT: ENVIRONMENTAL VIOLATION NOTICE
+    content = f"""================================================================================
+RIVER SENTINEL 2.0 — DRAFT ENVIRONMENTAL SCREENING NOTICE
+DOCUMENT STATUS: DRAFT — FOR AUTHORIZED REGULATORY REVIEW ONLY
+================================================================================
+Notice Reference ID : {notice_id}
+Incident Tracking Ref: {incident_ref}
+Generated At (UTC)  : {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}
+Generated At (IST)  : {datetime.now().strftime('%B %d, %Y %I:%M %p IST')}
+Review Stage        : PRELIMINARY SCREENING ADVISORY (NON-STATUTORY)
+Issuing Agency (Ref): Uttar Pradesh Pollution Control Board (Regional Office, Varanasi)
+                      [Subject to formal inspection and signature by Competent Authority]
 
-Notice is hereby given based on automated monitoring from RiverSentinel Station: Assi Ghat, Varanasi.
-Recorded parameters indicate non-compliance with statutory surface water standards.
-Corrective action must be initiated within 48 hours of receipt.
+TO: {target_entity}
+LOCATION OF INCIDENT: {location}
+SUBJECT: ADVISORY REGARDING SUSPECTED WATER QUALITY NON-COMPLIANCE ({violation_type})
+
+SUMMARY OF AUTOMATED SCREENING OBSERVATIONS:
+Preliminary sensor telemetry logged by River Sentinel station network indicates
+exceedance of ambient screening thresholds for surface water parameters.
+
+LEGAL STATUS & STATUTORY DISCLAIMER:
+1. River Sentinel 2.0 is an automated scientific early-warning and environmental 
+   monitoring software platform. It is NOT an official statutory enforcement body
+   (such as CPCB, UPPCB, or CWC).
+2. This document is a computer-generated DRAFT prepared exclusively for triage
+   and on-site inspection by authorized regulatory officers.
+3. This notice DOES NOT constitute a formal statutory order, legal finding of guilt,
+   or penalty directive under the Water (Prevention and Control of Pollution) Act, 1974,
+   unless and until verified via certified standard laboratory testing and formally
+   endorsed by an authorized officer of the state pollution control authority.
+4. Corrective and investigative inspection is recommended within 48 hours.
+================================================================================
 """
     return jsonify({
-        'status':    'success',
-        'notice_id': notice_id,
-        'content':   content,
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'status':        'success',
+        'document_type': 'draft_environmental_notice',
+        'review_status': 'DRAFT — FOR AUTHORIZED REVIEW',
+        'notice_id':     notice_id,
+        'incident_ref':  incident_ref,
+        'content':       content,
+        'timestamp':     now_utc.isoformat(),
+        'disclaimer':    'Preliminary screening advisory for authorized review only. Not a statutory enforcement order.'
     })

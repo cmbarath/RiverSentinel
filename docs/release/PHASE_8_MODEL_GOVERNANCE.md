@@ -22,8 +22,8 @@ River Sentinel 2.0 incorporates machine learning for hydrological flood stage fo
 
 | Model Name | Artifact File | Algorithm | Operational Status | Production Role |
 |---|---|---|---|---|
-| **Flood Forecaster v1** | `ml/models/flood_forecaster_v1.pkl` | Ridge Regressor (`alpha=100.0`) | `research_only` | 24h water surface elevation forecasting |
-| **WQ Anomaly Detector v1** | `ml/models/wq_anomaly_detector_v1.pkl` | Isolation Forest (`contam=0.03`) | `experimental` | Unsupervised contamination detection |
+| **Flood Stage Forecaster v1** | `ml/models/flood_stage_forecaster_v1.pkl` | Ridge Regressor (`alpha=10.0`) | `research_only` | 24h water surface elevation forecasting |
+| **WQ Anomaly Detector v1** | `ml/models/water_quality_anomaly_detector_v1.pkl` | Isolation Forest (`contam=0.03`) | `experimental` | Unsupervised contamination detection |
 | **Legacy Flood Model** | `backend/flood_model.pkl` | RandomForestClassifier | `retired_baseline` | Historical reference benchmark |
 | **Legacy Water Quality Model** | `backend/water_quality_model.pkl` | RandomForestClassifier | `retired_baseline` | Historical reference benchmark |
 
@@ -57,8 +57,10 @@ FEATURE_PROVENANCE = {
 
 ### Flood Stage Forecaster v1 (Ridge Regressor)
 To overcome the extreme overfitting and negative test $R^2$ exhibited by complex non-linear models (Random Forests, Gradient Boosters) on this limited historical series, a regularized **Ridge Regressor** was trained using strict chronological forward-chaining time-series splits:
-- **Mean Absolute Error (MAE):** **0.37 metres** across unseen temporal holdout test sets.
-- **L2 Penalty ($\alpha=100.0$):** Constrains collinear lag coefficients, ensuring stable extrapolation.
+- **Mean Absolute Error (MAE):** **0.7882 metres** across the held-out 2020 test year (outperforming persistence and non-linear models).
+- **Root Mean Squared Error (RMSE):** **0.9719 metres**.
+- **Out-of-sample $R^2$:** **-0.0399** (acknowledged and documented due to dry-season variance suppression).
+- **L2 Regularization ($\alpha=10.0$):** Constrains collinear lag coefficients, ensuring stable extrapolation.
 - **Operational Assessment:** Scientifically viable as an advisory tool; labeled `research_only` pending continuous multi-season physical gauge logging.
 
 ### Water Quality Anomaly Detector v1 (Isolation Forest)

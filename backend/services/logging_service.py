@@ -239,7 +239,7 @@ def init_logging_middleware(app):
         record = logger.makeRecord(
             logger.name, logging.ERROR, '', 0,
             f"Unhandled exception on {request.method} {request.path}: {str(e)}",
-            (), None, exc_info=sys.exc_info()
+            (), sys.exc_info()
         )
         record.correlation_id = corr_id
         record.request_id = req_id

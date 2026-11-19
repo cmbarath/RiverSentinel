@@ -167,13 +167,14 @@ public
 
 River Sentinel 2.0 enforces strict scientific validation and governance across all statistical models.
 
-### 1. Flood Stage Forecaster v1 (`backend/ml/models/flood_forecaster_v1.pkl`)
-- **Algorithm:** Ridge Regressor with L2 Regularization (`alpha=100.0`).
+### 1. Flood Stage Forecaster v1 (`backend/ml/models/flood_stage_forecaster_v1.pkl`)
+- **Algorithm:** Ridge Regressor with L2 Regularization (`alpha=10.0`).
 - **Objective:** 24-hour advance forecasting of Ganga water surface elevation at Varanasi (metres above MSL).
-- **Benchmark Performance:**
-  - Mean Absolute Error (MAE): **0.37 metres** (improved from baseline).
-  - Out-of-sample $R^2$: Positive operational correlation.
-  - Features: Upstream CWC water levels, regional precipitation, antecedent moisture, and seasonality sine/cosine transforms.
+- **Benchmark Performance (Held-out 2020 Test Year):**
+  - Mean Absolute Error (MAE): **0.7882 metres** (outperforming persistence and non-linear models).
+  - Root Mean Squared Error (RMSE): **0.9719 metres**.
+  - Out-of-sample $R^2$: -0.0399 (reflecting lower dry-season variance relative to training years).
+  - Features: 17 inputs including upstream CWC water levels, regional precipitation, antecedent moisture, and seasonality sine/cosine transforms.
 - **Operational Classification:** `research_only`. Prompts warning banners in dashboards and does not trigger automatic emergency broadcasts without human authority approval.
 
 ### 2. Water Quality Anomaly Detector v1 (`backend/ml/models/wq_anomaly_detector_v1.pkl`)

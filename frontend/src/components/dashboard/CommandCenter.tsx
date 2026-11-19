@@ -200,9 +200,9 @@ export default function CommandCenter() {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `Legal_Notice_${data.notice_id || 'UPPCB'}.txt`;
+                    a.download = `Draft_Notice_${data.notice_id || 'Review'}.txt`;
                     a.click();
-                    setStatus({ type: 'success', msg: `Legal Notice ${data.notice_id || ''} generated and downloaded.` });
+                    setStatus({ type: 'success', msg: `Draft Notice ${data.notice_id || ''} generated for authorized review.` });
                 }
             } else {
                 throw new Error(data.message || 'Action failed');
@@ -350,7 +350,7 @@ export default function CommandCenter() {
                             onClick={() => handleAction('notice')}
                             disabled={!!loading}
                         >
-                            <span>📄</span> {loading === 'notice' ? 'Generating...' : 'Generate UPPCB Legal Notice'}
+                            <span>📄</span> {loading === 'notice' ? 'Generating...' : 'Generate Draft Notice (For Review)'}
                         </button>
                         <button
                             className="btn btn-secondary"
