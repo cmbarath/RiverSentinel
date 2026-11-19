@@ -26,6 +26,8 @@ from routes.ai import ai_bp
 from routes.authority import authority_bp
 from routes.stations_v1 import stations_v1_bp
 from routes.alerts_v1 import alerts_v1_bp
+from routes.health import health_bp
+from services.logging_service import init_logging_middleware
 
 START_TIME = time.time()
 
@@ -35,6 +37,9 @@ def create_app():
     app = Flask(__name__)
     CORS(app, resources={r"/*": {"origins": "*"}})
 
+    # Initialize structured logging middleware & global sanitized error handlers
+    init_logging_middleware(app)
+
     # Register modular route blueprints
     app.register_blueprint(sensors_bp)
     app.register_blueprint(predictions_bp)
@@ -42,6 +47,7 @@ def create_app():
     app.register_blueprint(authority_bp)
     app.register_blueprint(stations_v1_bp)
     app.register_blueprint(alerts_v1_bp)
+    app.register_blueprint(health_bp)
 
     @app.route('/')
     def index():
@@ -65,22 +71,17 @@ def create_app():
                 "alert_rules_v1": "/api/v1/alerts/rules",
                 "notifications_v1": "/api/v1/notifications",
                 "notification_prefs_v1": "/api/v1/notifications/preferences",
-                "health": "/api/health"
+                "health": "/api/health",
+                "health_live": "/api/health/live",
+                "health_ready": "/api/health/ready",
+                "health_status": "/api/health/status"
             }
         })
 
     @app.route('/api/health')
     def health_check():
-        uptime = round(time.time() - START_TIME, 2)
-        return jsonify({
-            'status': 'healthy',
-            'uptime_seconds': uptime,
-            'database': 'Supabase PostgreSQL',
-            'services': {
-                'groq_ai': bool(os.getenv('GROQ_API_KEY')),
-                'supabase': bool(os.getenv('SUPABASE_URL'))
-            }
-        })
+        from routes.health import readiness_check
+        return readiness_check()
 
     return app
 

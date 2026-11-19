@@ -51,16 +51,46 @@ def _validated_sensor(reading, key, default, lo=None, hi=None):
 
 @sensors_bp.route('/api/sensors/latest', methods=['GET'])
 def get_latest_sensor():
-    """Return latest sensor readings from Supabase (or safe defaults)."""
+    """
+    Return latest sensor readings from Supabase.
+    Includes stale-data detection, missing parameter tracking, and observation lag.
+    """
     reading = get_latest_sensor_reading()
 
     if not reading:
         return jsonify({
             **DEFAULT_SENSOR_DATA,
             'timestamp': int(time.time() * 1000),
-            'status': 'default_fallback',
-            'provenance': 'default'
+            'status': 'no_data',
+            'provenance': 'none',
+            'is_stale': True,
+            'time_since_last_observation_seconds': None,
+            'missing_parameters': ['ph', 'turbidity', 'temperature', 'humidity', 'ec', 'water_level', 'bod', 'cod', 'do'],
+            'quality_status': 'no_data'
         })
+
+    # Compute observation lag & staleness
+    now_ts = time.time()
+    obs_time_iso = reading.get('created_at')
+    obs_ts = now_ts
+    if obs_time_iso:
+        try:
+            obs_dt = datetime.fromisoformat(str(obs_time_iso).replace('Z', '+00:00'))
+            obs_ts = obs_dt.timestamp()
+        except Exception:
+            obs_ts = now_ts
+    elif reading.get('timestamp'):
+        try:
+            obs_ts = float(reading.get('timestamp')) / 1000.0 if float(reading.get('timestamp')) > 1e11 else float(reading.get('timestamp'))
+        except Exception:
+            obs_ts = now_ts
+
+    time_since_last_sec = max(0, int(now_ts - obs_ts))
+    is_stale = (time_since_last_sec > 1800)  # > 30 minutes without reading
+
+    # Determine missing parameters
+    standard_params = ['ph', 'turbidity', 'temperature', 'humidity', 'ec', 'water_level', 'bod', 'cod', 'do']
+    missing_params = [p for p in standard_params if reading.get(p) is None]
 
     temp = _validated_sensor(reading, 'temperature', 28.0, -10, 60)
     wl   = _validated_sensor(reading, 'water_level', 68.5, 0, 100)
@@ -72,6 +102,10 @@ def get_latest_sensor():
     if raw_provenance not in ('real', 'simulated', 'default'):
         raw_provenance = 'simulated' if reading.get('is_simulated') else 'real'
 
+    quality_status = reading.get('quality_status', 'valid')
+    if is_stale and quality_status == 'valid':
+        quality_status = 'stale'
+
     return jsonify({
         'ph':                _validated_sensor(reading, 'ph', 7.5, 0, 14),
         'turbidity':         _validated_sensor(reading, 'turbidity', 100.0, 0, 5000),
@@ -82,12 +116,17 @@ def get_latest_sensor():
         'bod':               _validated_sensor(reading, 'bod', 30.0, 0, 500),
         'cod':               _validated_sensor(reading, 'cod', 150.0, 0, 1000),
         'do':                _validated_sensor(reading, 'do', 7.0, 0, 30),
-        'timestamp':         reading.get('timestamp') or int(time.time() * 1000),
-        'status':            reading.get('status', 'live'),
+        'timestamp':         reading.get('timestamp') or int(obs_ts * 1000),
+        'last_observation_time': obs_time_iso,
+        'last_server_receipt_time': reading.get('created_at'),
+        'time_since_last_observation_seconds': time_since_last_sec,
+        'is_stale':          is_stale,
+        'missing_parameters': missing_params,
+        'status':            'stale' if is_stale else reading.get('status', 'live'),
         'provenance':        raw_provenance,
         'is_simulated':      (raw_provenance == 'simulated'),
         'is_real':           (raw_provenance == 'real'),
-        'quality_status':    reading.get('quality_status', 'valid'),
+        'quality_status':    quality_status,
         'temperature_error': temperature_error,
         'water_level_error': water_level_error
     })
@@ -276,6 +315,23 @@ def ingest_production_device_telemetry():
             'status': 'error',
             'error_code': 'INVALID_TIMESTAMP',
             'message': f"observed_at must be valid ISO 8601 UTC: {te}"
+        }), 400
+
+    # Timestamp drift and expiry validation
+    now_utc = datetime.now(timezone.utc)
+    future_drift_sec = (observed_dt - now_utc).total_seconds()
+    if future_drift_sec > 300:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'FUTURE_TIMESTAMP',
+            'message': f"observed_at cannot be in the future (clock drift exceeds 300s limit: {round(future_drift_sec, 1)}s ahead)."
+        }), 400
+
+    if (now_utc - observed_dt).total_seconds() > (86400 * 30):
+        return jsonify({
+            'status': 'error',
+            'error_code': 'EXPIRED_TIMESTAMP',
+            'message': 'observed_at timestamp is older than the 30-day intake window.'
         }), 400
 
     # 4. Duplicate Message Protection (Idempotent Retry Contract)

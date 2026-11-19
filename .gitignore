@@ -36,6 +36,13 @@ supabase/.temp/
 # Logs
 *.log
 npm-debug.log*
+backend/logs/
+
+# Backups and Restoration Dumps
+backups/
+*.dump
+*.backup
+*.bak
 
 # Large Raw Datasets
 backend/data/raw/

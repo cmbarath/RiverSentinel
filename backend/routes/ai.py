@@ -55,27 +55,42 @@ Format key advice with bullet points when helpful."""
             messages=messages,
             model='qwen/qwen3.8-27b',
             temperature=0.6,
-            max_tokens=800
+            max_tokens=800,
+            timeout=8.0
         )
         reply = completion.choices[0].message.content.strip()
         return jsonify({'reply': reply})
     except Exception as e:
+        err_str = str(e).lower()
+        if 'rate_limit' in err_str or '429' in err_str or 'quota' in err_str:
+            return jsonify({
+                'error': 'AI service rate limit reached. Please wait a moment before trying again.',
+                'error_code': 'AI_RATE_LIMIT_EXCEEDED'
+            }), 429
+        elif 'timeout' in err_str or 'timed out' in err_str:
+            return jsonify({
+                'error': 'AI request timed out. Downstream provider did not respond within 8 seconds.',
+                'error_code': 'AI_TIMEOUT'
+            }), 504
         print(f"[ERROR] Groq chat completion error: {e}")
-        return jsonify({'error': 'Failed to generate AI response. Please try again.'}), 500
+        return jsonify({
+            'error': 'Failed to generate AI response. Service temporarily degraded.',
+            'error_code': 'AI_PROVIDER_ERROR'
+        }), 503
 
 
 @ai_bp.route('/api/ai/analyze-image', methods=['POST'])
 def analyze_image():
-    """Multimodal image pollution assessment using Groq Qwen Vision."""
+    """Multimodal image pollution assessment using Groq Qwen Vision with resilience guards."""
     if not groq_client:
-        return jsonify({'error': 'Groq client not configured'}), 503
+        return jsonify({'error': 'Groq client not configured', 'error_code': 'AI_UNAVAILABLE'}), 503
 
     if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
+        return jsonify({'error': 'No image uploaded', 'error_code': 'MISSING_IMAGE'}), 400
 
     image_file = request.files['image']
     if not image_file.filename:
-        return jsonify({'error': 'Empty filename'}), 400
+        return jsonify({'error': 'Empty filename', 'error_code': 'EMPTY_FILENAME'}), 400
 
     try:
         image_bytes   = image_file.read()
@@ -102,7 +117,8 @@ def analyze_image():
             }],
             model='qwen/qwen3.8-27b',
             temperature=0.1,
-            max_tokens=512
+            max_tokens=512,
+            timeout=10.0
         )
 
         raw = completion.choices[0].message.content.strip()
@@ -112,16 +128,18 @@ def analyze_image():
             raw = raw.split('```')[1].split('```')[0].strip()
 
         result = json.loads(raw)
+        result['screening_type'] = 'automated_visual_screening'
+        result['disclaimer'] = 'Automated AI visual screening for preliminary triage. Does not constitute statutory CPCB Class B lab compliance.'
 
-        # Persist report directly into Supabase
+        # Persist report directly into Supabase tagged as automated screening
         try:
             supabase_insert('pollution_reports', {
                 'pollution_level': result.get('pollution_level', 'Moderate'),
                 'pollutants': result.get('pollutants', []),
                 'assessment': result.get('assessment', ''),
-                'description': f"AI-assisted image evaluation (confidence: {result.get('confidence', 75)}%)",
+                'description': f"AI automated visual screening (confidence: {result.get('confidence', 75)}%)",
                 'location_name': 'Ganga River',
-                'reporter': 'Citizen AI',
+                'reporter': 'Citizen AI Visual Screening',
                 'status': 'PENDING'
             })
         except Exception as se:
@@ -130,5 +148,19 @@ def analyze_image():
         return jsonify(result)
 
     except Exception as e:
+        err_str = str(e).lower()
+        if 'rate_limit' in err_str or '429' in err_str:
+            return jsonify({
+                'error': 'AI vision service rate limit reached. Please try again shortly.',
+                'error_code': 'AI_RATE_LIMIT_EXCEEDED'
+            }), 429
+        elif 'timeout' in err_str:
+            return jsonify({
+                'error': 'AI vision request timed out.',
+                'error_code': 'AI_TIMEOUT'
+            }), 504
         print(f"[ERROR] Image analysis error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'error': 'AI vision analysis failed. Service temporarily unavailable.',
+            'error_code': 'AI_PROVIDER_ERROR'
+        }), 503

@@ -62,6 +62,7 @@ const ReportPollution = () => {
     };
 
     const handleSubmit = async () => {
+        if (submitting) return;
         if (!image || !reportData) {
             alert("Please upload and analyze an image first.");
             return;

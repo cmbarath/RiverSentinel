@@ -148,34 +148,36 @@ def get_latest_sensor_reading() -> Optional[Dict[str, Any]]:
 
 
 def get_sensor_summary() -> Dict[str, Any]:
-    """Calculate statistical averages from recent sensor readings."""
-    default_stats = {
-        'avg_ph': 7.4,
-        'avg_do': 6.8,
-        'avg_turbidity': 14.5,
-        'avg_water_level': 67.5,
-        'trend': 'STABLE',
-        'sample_count': 0
+    """Calculate statistical averages from recent sensor readings without fabricating values on failure."""
+    empty_stats = {
+        'avg_ph': None,
+        'avg_do': None,
+        'avg_turbidity': None,
+        'avg_water_level': None,
+        'trend': 'UNKNOWN',
+        'sample_count': 0,
+        'status': 'no_recent_observations'
     }
     rows = supabase_get('sensor_readings', order='created_at.desc', limit=50)
     if not rows or not isinstance(rows, list):
-        return default_stats
+        return empty_stats
     
     phs = [float(r['ph']) for r in rows if r.get('ph') is not None]
     dos = [float(r['do']) for r in rows if r.get('do') is not None]
     turbs = [float(r['turbidity']) for r in rows if r.get('turbidity') is not None]
     wls = [float(r['water_level']) for r in rows if r.get('water_level') is not None]
 
-    if not phs:
-        return default_stats
+    if not phs and not dos and not turbs and not wls:
+        return empty_stats
 
     return {
-        'avg_ph': round(sum(phs) / len(phs), 2),
-        'avg_do': round(sum(dos) / len(dos), 2) if dos else 6.8,
-        'avg_turbidity': round(sum(turbs) / len(turbs), 1) if turbs else 14.5,
-        'avg_water_level': round(sum(wls) / len(wls), 2) if wls else 67.5,
+        'avg_ph': round(sum(phs) / len(phs), 2) if phs else None,
+        'avg_do': round(sum(dos) / len(dos), 2) if dos else None,
+        'avg_turbidity': round(sum(turbs) / len(turbs), 1) if turbs else None,
+        'avg_water_level': round(sum(wls) / len(wls), 2) if wls else None,
         'trend': 'RISING' if len(wls) >= 2 and wls[0] > wls[-1] else 'STABLE',
-        'sample_count': len(rows)
+        'sample_count': len(rows),
+        'status': 'operational'
     }
 
 
