@@ -25,6 +25,7 @@ from routes.predictions import predictions_bp
 from routes.ai import ai_bp
 from routes.authority import authority_bp
 from routes.stations_v1 import stations_v1_bp
+from routes.alerts_v1 import alerts_v1_bp
 
 START_TIME = time.time()
 
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(ai_bp)
     app.register_blueprint(authority_bp)
     app.register_blueprint(stations_v1_bp)
+    app.register_blueprint(alerts_v1_bp)
 
     @app.route('/')
     def index():
@@ -51,6 +53,7 @@ def create_app():
             "endpoints": {
                 "sensors": "/api/sensors/latest",
                 "telemetry_ingest": "/api/telemetry/simulate",
+                "telemetry_ingest_v1": "/api/v1/telemetry/ingest",
                 "flood_prediction": "/api/flood/predict",
                 "water_quality": "/api/water-quality/predict",
                 "weather": "/api/weather",
@@ -58,6 +61,10 @@ def create_app():
                 "image_analysis": "/api/ai/analyze-image",
                 "reports": "/api/authority/reports",
                 "report_summary": "/api/authority/report-summary",
+                "alerts_v1": "/api/v1/alerts",
+                "alert_rules_v1": "/api/v1/alerts/rules",
+                "notifications_v1": "/api/v1/notifications",
+                "notification_prefs_v1": "/api/v1/notifications/preferences",
                 "health": "/api/health"
             }
         })

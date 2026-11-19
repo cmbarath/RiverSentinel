@@ -13,10 +13,11 @@ import time
 import hashlib
 from datetime import datetime
 from services.supabase_service import (
-    supabase_get, supabase_insert, supabase_update,
+    supabase_get, supabase_insert, supabase_update, execute_sql,
     get_sensor_summary, get_reports_summary
 )
 from services.auth_service import require_auth, require_role, optional_auth
+from services.alert_service import AlertService
 
 authority_bp = Blueprint('authority', __name__)
 
@@ -320,6 +321,12 @@ def submit_full_report():
 
     res = supabase_insert('pollution_reports', record)
     if res:
+        # Phase 5: Trigger authority review alert for new pollution report
+        try:
+            AlertService.evaluate_new_pollution_report(res[0])
+        except Exception as e:
+            print(f"[WARN] AlertService evaluation error on pollution report: {e}")
+
         return jsonify({
             'status': 'success',
             'message': 'Report submitted successfully',
@@ -339,11 +346,18 @@ def get_report_summary():
     sensor_stats = get_sensor_summary()
     report_stats = get_reports_summary()
 
+    # Query real database active alerts
+    try:
+        active_cnt_rows = execute_sql("SELECT count(*) FROM public.system_alerts WHERE status != 'resolved';")
+        active_alerts_count = active_cnt_rows[0][0] if active_cnt_rows else len(ACTIVE_SYSTEM_ALERTS)
+    except Exception:
+        active_alerts_count = len(ACTIVE_SYSTEM_ALERTS)
+
     return jsonify({
         'status':         'success',
         'sensor_summary': sensor_stats,
         'report_summary': report_stats,
-        'active_alerts':  len(ACTIVE_SYSTEM_ALERTS),
+        'active_alerts':  active_alerts_count,
         'generated_at':   datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'agency':         'UP Pollution Control Board (VARANASI)'
     })

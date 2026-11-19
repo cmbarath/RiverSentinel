@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timezone
 from services.supabase_service import get_latest_sensor_reading, supabase_insert, supabase_get
 from services.device_auth_service import verify_device_credentials, touch_device_activity
+from services.alert_service import AlertService
 
 sensors_bp = Blueprint('sensors', __name__)
 
@@ -152,6 +153,13 @@ def ingest_simulator_telemetry():
 
         res = supabase_insert('sensor_readings', record)
         if res:
+            # Trigger alert evaluation for simulated telemetry (non-blocking, SMS strictly suppressed)
+            try:
+                rec_for_alert = res[0] if isinstance(res, list) and res else record
+                AlertService.evaluate_sensor_observation(rec_for_alert, station_id=record.get('station_id'))
+            except Exception as e:
+                print(f"[WARN] AlertService evaluation error on simulated telemetry: {e}")
+
             return jsonify({
                 'status': 'success',
                 'message': 'Simulated telemetry persisted successfully',
@@ -397,6 +405,13 @@ def ingest_production_device_telemetry():
     # 7. Device Activity Update (Lifecycle Transition to 'online')
     fw_version = data.get('firmware_version', 'v1.0.0')
     touch_device_activity(device_id, battery_level=battery_pct, firmware_ver=fw_version)
+
+    # 7b. Real-Time Alert Evaluation (Phase 5)
+    try:
+        rec_for_alert = res[0] if isinstance(res, list) and res else record
+        AlertService.evaluate_sensor_observation(rec_for_alert, station_id=station_id)
+    except Exception as e:
+        print(f"[WARN] AlertService evaluation error on device telemetry: {e}")
 
     # 8. Telemetry Audit Log Entry
     proc_time_ms = round((time.time() - start_time) * 1000, 2)

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
+import AuthorityAlerts from "@/components/dashboard/AuthorityAlerts";
 import LiveSensorData from "@/components/dashboard/LiveSensorData";
 import FloodMapViewer from "@/components/dashboard/FloodMapViewer";
 import DatasetUpload from "@/components/dashboard/DatasetUpload";
@@ -14,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 const tabs = [
     { id: "command", label: "Command Center", icon: "🏢" },
+    { id: "alerts", label: "Alert Center (Phase 5)", icon: "🚨" },
     { id: "live", label: "Live Sensor Data", icon: "📊" },
     { id: "map", label: "Flood Susceptibility Map", icon: "📍" },
     { id: "manage", label: "Manage Reports", icon: "🛡️" },
@@ -51,6 +53,7 @@ export default function AuthorityDashboard() {
     const renderContent = () => {
         switch (activeTab) {
             case "command": return <CommandCenter />;
+            case "alerts": return <AuthorityAlerts />;
             case "live": return <LiveSensorData />;
             case "map": return <FloodMapViewer />;
             case "manage": return <ManageReports />;
