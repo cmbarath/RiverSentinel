@@ -1,23 +1,33 @@
-# Dependencies
+# Environment and Secrets
+.env
+.env.*
+.env.local
+!.env.example
+serviceAccountKey.json
+*.pem
+*.key
+
+# Dependencies and Virtual Environments
 node_modules/
 venv/
 .venv/
+backend/venv/
 __pycache__/
 *.pyc
-.env
 
-# Firebase credentials
-serviceAccountKey.json
+# Next.js Build Outputs
+frontend/.next/
+frontend/out/
+*.tsbuildinfo
+next-env.d.ts
 
-# IDE
+# IDE and OS
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Build
+# Build and Egg Info
 dist/
 build/
 *.egg-info/

@@ -13,13 +13,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-FIREBASE_URL = os.getenv('FIREBASE_DATABASE_URL')
-FIREBASE_SECRET = os.getenv('FIREBASE_SECRET')
-
-if not FIREBASE_URL or not FIREBASE_SECRET:
-    print("❌ Error: Missing Firebase configuration in .env")
-    input("Press Enter to exit...")
-    exit(1)
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000').rstrip('/')
+SIMULATOR_TOKEN = os.getenv('SIMULATOR_API_TOKEN', 'rs_sim_dev_sec_7a8f9c12')
 
 def find_arduino_port():
     """Auto-detect likely Arduino port"""
@@ -86,26 +81,26 @@ def parse_line(line, current_data):
             
     return "IGNORED"
 
-def push_to_firebase(data):
-    """Push data to Firebase using REST API"""
+def push_to_backend(data):
+    """Push parsed serial reading to River Sentinel backend ingestion endpoint"""
     try:
-        # Add timestamp
-        data['timestamp'] = int(time.time() * 1000)
-        data['status'] = 'live'
-        
-        # Use timestamp as key
-        key = str(data['timestamp'])
-        update_url = f"{FIREBASE_URL}/sensor_data/{key}.json?auth={FIREBASE_SECRET}"
-        
-        response = requests.put(update_url, json=data)
-        
-        if response.status_code == 200:
-            print(f"🚀 Sent to Firebase: pH={data.get('ph', '?')} | WL={data.get('water_level', '?')}m | Temp={data.get('temperature', '?')}°C")
+        url = f"{BACKEND_URL}/api/telemetry/simulate"
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Simulator-Token': SIMULATOR_TOKEN
+        }
+        payload = {
+            **data,
+            'provenance': 'real_sensor',
+            'status': 'live'
+        }
+        response = requests.post(url, headers=headers, json=payload, timeout=5)
+        if response.status_code in (200, 201):
+            print(f"🚀 Telemetry sent to Backend: pH={data.get('ph', '?')} | WL={data.get('water_level', '?')}m | Temp={data.get('temperature', '?')}°C")
             return True
         else:
-            print(f"❌ Failed to push: {response.status_code} - {response.text}")
+            print(f"❌ Failed to push: {response.status_code} - {response.text[:100]}")
             return False
-            
     except Exception as e:
         print(f"❌ Exception: {str(e)}")
         return False
@@ -150,12 +145,12 @@ def main():
                     if result == "NEW_BLOCK":
                         # If we have data from the previous block, push it now
                         if len(current_data) > 3: 
-                            push_to_firebase(current_data)
+                            push_to_backend(current_data)
                             current_data = {} # Reset for next block
                             
                     # Timeout push
                     if len(current_data) > 5 and (time.time() - last_push_time > 5):
-                         push_to_firebase(current_data)
+                         push_to_backend(current_data)
                          last_push_time = time.time()
                          current_data = {}
                          

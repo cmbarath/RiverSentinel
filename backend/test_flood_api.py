@@ -1,107 +1,63 @@
 """
-Test script for flood prediction API endpoint
+Test script for flood prediction API endpoint (River Sentinel 2.0)
+Tests active 6-feature Random Forest model contract via test client.
 """
-import requests
-import json
 
-# Base URL
-BASE_URL = "http://localhost:5000"
+import json
+from app import app
 
 def test_flood_prediction():
-    """Test flood prediction with different scenarios"""
-    
+    """Test flood prediction with canonical 6-feature scenarios"""
+    client = app.test_client()
+
     print("=" * 60)
-    print("FLOOD PREDICTION API TEST")
+    print("FLOOD PREDICTION API REGRESSION TEST")
     print("=" * 60)
-    
+
     # Test 1: Low Risk Scenario
     print("\n1. Testing LOW RISK scenario...")
-    low_risk_data = {
-        "water_level_varanasi": 60.0,
-        "discharge_cumec": 1000.0,
-        "rain_upstream_avg_mm": 10.0,
-        "temperature_c": 25.0,
-        "humidity_pct": 60.0,
-        "basin_area_pct": 40.0,
-        "mean_elevation_m": 150.0,
-        "mean_slope": 0.05,
-        "basin_relief_m": 200.0,
-        "flow_accumulation": 800.0,
-        "twi": 7.0,
-        "network_density": 0.25
+    low_risk = {
+        "water_level": 65.5,
+        "discharge": 8000.0,
+        "rain_varanasi": 2.0,
+        "rain_upstream": 5.0,
+        "temperature": 28.0,
+        "humidity": 60.0
     }
-    
-    try:
-        response = requests.post(f"{BASE_URL}/api/flood/predict", json=low_risk_data)
-        print(f"Status: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except Exception as e:
-        print(f"Error: {e}")
-    
-    # Test 2: Moderate Risk Scenario
-    print("\n2. Testing MODERATE RISK scenario...")
-    moderate_risk_data = {
-        "water_level_varanasi": 68.0,
-        "discharge_cumec": 2000.0,
-        "rain_upstream_avg_mm": 30.0,
-        "temperature_c": 28.0,
-        "humidity_pct": 75.0,
-        "basin_area_pct": 45.0,
-        "mean_elevation_m": 150.0,
-        "mean_slope": 0.05,
-        "basin_relief_m": 200.0,
-        "flow_accumulation": 1200.0,
-        "twi": 8.5,
-        "network_density": 0.3
+    r1 = client.post("/api/flood/predict", json=low_risk)
+    print(f"Status: {r1.status_code}")
+    d1 = r1.get_json()
+    print(f"Risk: {d1.get('risk_level')} | Prob: {d1.get('flood_probability')}% | Pred: {d1.get('prediction')}")
+    assert r1.status_code == 200
+    assert d1.get('risk_level') == 'LOW'
+
+    # Test 2: High Risk Scenario
+    print("\n2. Testing HIGH RISK scenario...")
+    high_risk = {
+        "water_level": 70.5,
+        "discharge": 15000.0,
+        "rain_varanasi": 85.0,
+        "rain_upstream": 120.0,
+        "temperature": 25.0,
+        "humidity": 95.0
     }
-    
-    try:
-        response = requests.post(f"{BASE_URL}/api/flood/predict", json=moderate_risk_data)
-        print(f"Status: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except Exception as e:
-        print(f"Error: {e}")
-    
-    # Test 3: High Risk Scenario
-    print("\n3. Testing HIGH RISK scenario...")
-    high_risk_data = {
-        "water_level_varanasi": 75.0,
-        "discharge_cumec": 3000.0,
-        "rain_upstream_avg_mm": 50.0,
-        "temperature_c": 30.0,
-        "humidity_pct": 90.0,
-        "basin_area_pct": 50.0,
-        "mean_elevation_m": 150.0,
-        "mean_slope": 0.05,
-        "basin_relief_m": 200.0,
-        "flow_accumulation": 1500.0,
-        "twi": 10.0,
-        "network_density": 0.4
-    }
-    
-    try:
-        response = requests.post(f"{BASE_URL}/api/flood/predict", json=high_risk_data)
-        print(f"Status: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except Exception as e:
-        print(f"Error: {e}")
-    
-    # Test 4: Missing Fields Error
-    print("\n4. Testing error handling (missing fields)...")
-    incomplete_data = {
-        "water_level_varanasi": 65.0,
-        "discharge_cumec": 1500.0
-    }
-    
-    try:
-        response = requests.post(f"{BASE_URL}/api/flood/predict", json=incomplete_data)
-        print(f"Status: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except Exception as e:
-        print(f"Error: {e}")
-    
+    r2 = client.post("/api/flood/predict", json=high_risk)
+    print(f"Status: {r2.status_code}")
+    d2 = r2.get_json()
+    print(f"Risk: {d2.get('risk_level')} | Prob: {d2.get('flood_probability')}% | Pred: {d2.get('prediction')}")
+    assert r2.status_code == 200
+    assert d2.get('risk_level') == 'HIGH'
+
+    # Test 3: GET endpoint (live sensor auto-evaluation)
+    print("\n3. Testing GET live prediction...")
+    r3 = client.get("/api/flood/predict")
+    print(f"Status: {r3.status_code}")
+    d3 = r3.get_json()
+    print(f"Risk: {d3.get('risk_level')} | Prob: {d3.get('flood_probability')}%")
+    assert r3.status_code == 200
+
     print("\n" + "=" * 60)
-    print("TEST COMPLETE")
+    print("✅ All flood prediction API tests PASSED!")
     print("=" * 60)
 
 if __name__ == "__main__":
