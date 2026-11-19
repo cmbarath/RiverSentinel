@@ -164,7 +164,7 @@ To instantiate the production database without incurring charges:
 - **Current State:** **`CONFIGURED` / `VERIFIED`** (Production build passes; ready for deployment).
 
 ### C. Deployment Token Authorization & Storage
-- **Token Receipt:** Received deployment token `4f76bcc8dc78719a57b22abe1739ad47bc90ef07`.
+- **Token Receipt:** Deployment token recorded and safely handled as `[REDACTED — configure through provider dashboard]`.
 - **Authorization Compliance:** Per the user's explicit directive ("*store it don't deploy i will give you instrctions then you do it*"), no automatic deployments or third-party API mutations have been initiated. The key is securely preserved.
 
 ---
