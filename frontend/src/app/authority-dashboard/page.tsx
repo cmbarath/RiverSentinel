@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import CommandCenter from "@/components/dashboard/CommandCenter";
 import LiveSensorData from "@/components/dashboard/LiveSensorData";
-import InteractiveMap from "@/components/dashboard/InteractiveMap";
 import FloodMapViewer from "@/components/dashboard/FloodMapViewer";
 import DatasetUpload from "@/components/dashboard/DatasetUpload";
 import ManageReports from "@/components/dashboard/ManageReports";

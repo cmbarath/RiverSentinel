@@ -31,6 +31,7 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+supabase/.temp/
 
 # Logs
 *.log

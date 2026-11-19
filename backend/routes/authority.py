@@ -1,6 +1,7 @@
 """
 Authority Actions & Operations Routes Blueprint
-Handles citizen report management, summaries, legitimate CSV export, legal notice generation, and alert triggers.
+Handles citizen report management, summaries, CSV export, legal notice generation,
+monitoring stations, IoT devices, and role-based administrative operations.
 """
 
 from flask import Blueprint, jsonify, request, make_response
@@ -9,11 +10,13 @@ import io
 import csv
 import random
 import time
+import hashlib
 from datetime import datetime
 from services.supabase_service import (
     supabase_get, supabase_insert, supabase_update,
     get_sensor_summary, get_reports_summary
 )
+from services.auth_service import require_auth, require_role, optional_auth
 
 authority_bp = Blueprint('authority', __name__)
 
@@ -21,23 +24,167 @@ authority_bp = Blueprint('authority', __name__)
 ACTIVE_SYSTEM_ALERTS = []
 
 
-@authority_bp.route('/api/authority/reports', methods=['GET'])
-def get_reports():
-    """Retrieve pollution reports from Supabase."""
-    mock_reports = [
-        {'id': 'mock_1', 'location': 'Dashashwamedh Steps', 'reporter': 'Aviral S.',
-         'pollution_level': 'High', 'status': 'PENDING',
-         'timestamp': int(time.time() * 1000),
-         'assessment': 'Visible oil slicks near boat landing.'},
-        {'id': 'mock_2', 'location': 'Assi Ghat', 'reporter': 'Priya V.',
-         'pollution_level': 'Moderate', 'status': 'VERIFIED',
-         'timestamp': int(time.time() * 1000) - 3600000,
-         'assessment': 'Plastic waste at riverbank.'}
-    ]
+# ============================================================================
+# 1. AUTH & PROFILE ENDPOINTS
+# ============================================================================
 
+@authority_bp.route('/api/auth/me', methods=['GET'])
+@require_auth
+def get_current_user_profile():
+    """Return the profile and validated role of the authenticated caller."""
+    user = getattr(request, 'user', {})
+    profile = getattr(request, 'user_profile', {})
+    role = getattr(request, 'user_role', 'citizen')
+
+    return jsonify({
+        'status': 'success',
+        'user': {
+            'id': user.get('id'),
+            'email': user.get('email'),
+            'created_at': user.get('created_at'),
+            'phone': user.get('phone')
+        },
+        'profile': profile,
+        'role': role
+    })
+
+
+# ============================================================================
+# 2. MONITORING STATIONS ENDPOINTS
+# ============================================================================
+
+@authority_bp.route('/api/stations', methods=['GET'])
+def get_monitoring_stations():
+    """
+    Public endpoint: Retrieve all active Varanasi monitoring stations.
+    Accessible anonymously so interactive maps and dashboards can render stations.
+    """
+    stations = supabase_get('monitoring_stations', order='station_code.asc')
+    if stations and isinstance(stations, list):
+        return jsonify({
+            'status': 'success',
+            'count': len(stations),
+            'stations': stations
+        })
+
+    # Fallback default stations if database empty
+    return jsonify({
+        'status': 'success',
+        'count': 1,
+        'stations': [{
+            'id': 'stn-assi-fallback',
+            'station_code': 'STN-VAR-ASSI-01',
+            'station_name': 'Assi Ghat Monitoring Station',
+            'river_name': 'Ganga',
+            'location_name': 'Assi Ghat, Varanasi, UP, India',
+            'latitude': 25.2891,
+            'longitude': 83.0067,
+            'status': 'active',
+            'warning_water_level_m': 71.26,
+            'danger_water_level_m': 73.23
+        }]
+    })
+
+
+@authority_bp.route('/api/stations', methods=['POST'])
+@require_role('authority_admin')
+def create_monitoring_station():
+    """Register a new monitoring station (Authority Admin only)."""
+    data = request.get_json(silent=True) or {}
+    station_code = data.get('station_code')
+    station_name = data.get('station_name')
+    lat = data.get('latitude')
+    lon = data.get('longitude')
+
+    if not station_code or not station_name or lat is None or lon is None:
+        return jsonify({'error': 'Bad Request', 'message': 'Missing required fields: station_code, station_name, latitude, longitude'}), 400
+
+    new_station = {
+        'station_code': station_code.strip(),
+        'station_name': station_name.strip(),
+        'river_name': data.get('river_name', 'Ganga'),
+        'description': data.get('description', ''),
+        'location_name': data.get('location_name', station_name),
+        'latitude': float(lat),
+        'longitude': float(lon),
+        'warning_water_level_m': float(data.get('warning_water_level_m', 71.26)),
+        'danger_water_level_m': float(data.get('danger_water_level_m', 73.23)),
+        'status': data.get('status', 'active')
+    }
+
+    res = supabase_insert('monitoring_stations', new_station)
+    if res:
+        return jsonify({'status': 'success', 'message': 'Monitoring station registered', 'station': res[0]}), 201
+    return jsonify({'error': 'Internal Server Error', 'message': 'Failed to save station'}), 500
+
+
+# ============================================================================
+# 3. IOT DEVICES MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@authority_bp.route('/api/devices', methods=['GET'])
+@require_role('authority_admin', 'field_officer')
+def list_devices():
+    """List registered IoT devices (Authority Admin & Field Officers only)."""
+    devices = supabase_get('devices', order='device_code.asc')
+    return jsonify({
+        'status': 'success',
+        'count': len(devices) if devices else 0,
+        'devices': devices or []
+    })
+
+
+@authority_bp.route('/api/devices', methods=['POST'])
+@require_role('authority_admin')
+def register_device():
+    """Register and provision a new IoT sensor device (Authority Admin only)."""
+    data = request.get_json(silent=True) or {}
+    device_code = data.get('device_code')
+    device_name = data.get('device_name')
+    station_id = data.get('station_id')
+    raw_token = data.get('token')
+
+    if not device_code or not device_name or not raw_token:
+        return jsonify({'error': 'Bad Request', 'message': 'Missing required fields: device_code, device_name, token'}), 400
+
+    # Store SHA-256 hash of the device pre-shared token
+    token_hash = hashlib.sha256(raw_token.strip().encode('utf-8')).hexdigest()
+
+    new_device = {
+        'device_code': device_code.strip(),
+        'device_name': device_name.strip(),
+        'station_id': station_id if station_id else None,
+        'device_type': data.get('device_type', 'ESP32-WROOM-32'),
+        'firmware_version': data.get('firmware_version', 'v1.0.0'),
+        'credential_hash': token_hash,
+        'status': 'active',
+        'battery_level_pct': 100.0
+    }
+
+    res = supabase_insert('devices', new_device)
+    if res:
+        return jsonify({
+            'status': 'success',
+            'message': 'IoT Device registered successfully',
+            'device': res[0]
+        }), 201
+    return jsonify({'error': 'Internal Server Error', 'message': 'Failed to register device'}), 500
+
+
+# ============================================================================
+# 4. POLLUTION REPORTS & INCIDENTS (CITIZEN & AUTHORITY)
+# ============================================================================
+
+@authority_bp.route('/api/authority/reports', methods=['GET'])
+@require_role('authority_admin', 'field_officer')
+def get_reports():
+    """
+    Retrieve pollution reports from Supabase.
+    Strictly protected: Accessible only to verified authority_admin and field_officer.
+    """
     try:
         sb_reports = supabase_get('pollution_reports', order='created_at.desc', limit=50)
-        if sb_reports and isinstance(sb_reports, list) and len(sb_reports) > 0:
+        if sb_reports and isinstance(sb_reports, list):
             formatted = []
             for row in sb_reports:
                 ts = int(time.time() * 1000)
@@ -49,24 +196,28 @@ def get_reports():
                 formatted.append({
                     'id': str(row.get('id', '')),
                     'location': row.get('location_name', 'Ganga River'),
-                    'reporter': row.get('reporter', 'Citizen AI'),
+                    'reporter': row.get('reporter', 'Citizen User'),
                     'pollution_level': row.get('pollution_level', 'Moderate'),
                     'status': row.get('status', 'PENDING'),
                     'timestamp': ts,
                     'assessment': row.get('assessment', '') or row.get('description', ''),
                     'confidence': 85.0,
-                    'pollutants': row.get('pollutants', [])
+                    'pollutants': row.get('pollutants', []),
+                    'storage_path': row.get('storage_path'),
+                    'created_by': row.get('created_by'),
+                    'station_id': row.get('station_id')
                 })
             return jsonify(formatted)
     except Exception as e:
         print(f"[ERROR] Failed to fetch reports from Supabase: {e}")
 
-    return jsonify(mock_reports)
+    return jsonify([])
 
 
 @authority_bp.route('/api/authority/reports/update', methods=['POST'])
+@require_role('authority_admin', 'field_officer')
 def update_report_status():
-    """Update report workflow status in Supabase."""
+    """Update report workflow status in Supabase (Admins & Field Officers)."""
     data       = request.get_json(silent=True) or {}
     report_id  = data.get('reportId')
     new_status = data.get('status')
@@ -74,8 +225,11 @@ def update_report_status():
     if not report_id or not new_status:
         return jsonify({'status': 'error', 'message': 'Missing reportId or status'}), 400
 
-    if str(report_id).isdigit():
-        supabase_update('pollution_reports', f"id=eq.{report_id}", {'status': new_status})
+    filter_param = f"id=eq.{report_id}"
+    supabase_update('pollution_reports', filter_param, {
+        'status': new_status,
+        'updated_at': datetime.now().isoformat()
+    })
 
     return jsonify({
         'status':    'success',
@@ -84,28 +238,66 @@ def update_report_status():
     })
 
 
+@authority_bp.route('/api/citizen/my-reports', methods=['GET'])
+@require_auth
+def get_my_citizen_reports():
+    """Retrieve pollution reports created by the authenticated citizen."""
+    user = getattr(request, 'user', {})
+    user_id = user.get('id')
+
+    reports = supabase_get('pollution_reports', filters={'created_by': f'eq.{user_id}'}, order='created_at.desc')
+    return jsonify({
+        'status': 'success',
+        'reports': reports or []
+    })
+
+
 @authority_bp.route('/api/reports/submit', methods=['POST'])
+@optional_auth
 def submit_full_report():
-    """Submit citizen pollution report to Supabase."""
+    """
+    Submit citizen pollution report to Supabase.
+    Attaches authenticated user UUID if logged in, along with optional storage_path and station_id.
+    """
     data = request.get_json(silent=True) or {}
+    user = getattr(request, 'user', None)
+
+    created_by = user.get('id') if user else data.get('created_by')
+    reporter_name = data.get('reporter')
+    if not reporter_name and user:
+        reporter_name = user.get('email', 'Citizen User')
+    elif not reporter_name:
+        reporter_name = 'Citizen User'
 
     record = {
         'pollution_level': data.get('pollution_level', 'Moderate'),
         'pollutants': data.get('pollutants', []),
         'assessment': data.get('assessment', ''),
         'description': data.get('description', ''),
-        'location_name': data.get('location', data.get('location_name', 'Ganga River')),
-        'reporter': data.get('reporter', 'Citizen User'),
-        'status': 'PENDING'
+        'location_name': data.get('location', data.get('location_name', 'Ganga River, Varanasi')),
+        'reporter': reporter_name,
+        'status': 'PENDING',
+        'storage_path': data.get('storage_path'),
+        'created_by': created_by,
+        'station_id': data.get('station_id')
     }
 
     res = supabase_insert('pollution_reports', record)
     if res:
-        return jsonify({'status': 'success', 'message': 'Report submitted successfully'}), 201
+        return jsonify({
+            'status': 'success',
+            'message': 'Report submitted successfully',
+            'report': res[0]
+        }), 201
     return jsonify({'status': 'error', 'message': 'Failed to save report'}), 500
 
 
+# ============================================================================
+# 5. SUMMARIES, CSV EXPORT, ALERTS & NOTICES
+# ============================================================================
+
 @authority_bp.route('/api/authority/report-summary', methods=['GET'])
+@require_role('authority_admin', 'field_officer')
 def get_report_summary():
     """Return live aggregate statistics computed from Supabase."""
     sensor_stats = get_sensor_summary()
@@ -122,12 +314,13 @@ def get_report_summary():
 
 
 @authority_bp.route('/api/authority/export-data', methods=['GET'])
+@require_role('authority_admin', 'field_officer')
 def export_sensor_data():
     """Export verified sensor telemetry from Supabase as a CSV file."""
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        'ID', 'Timestamp_UTC', 'Station', 'pH', 'Turbidity_NTU',
+        'ID', 'Timestamp_UTC', 'Station_ID', 'pH', 'Turbidity_NTU',
         'Temperature_C', 'Water_Level_M', 'DO_mg_L', 'BOD_mg_L',
         'COD_mg_L', 'Provenance', 'Status'
     ])
@@ -138,7 +331,7 @@ def export_sensor_data():
             writer.writerow([
                 r.get('id', ''),
                 r.get('created_at', ''),
-                'Assi Ghat',
+                r.get('station_id', 'STN-VAR-ASSI-01'),
                 r.get('ph', ''),
                 r.get('turbidity', ''),
                 r.get('temperature', ''),
@@ -150,7 +343,6 @@ def export_sensor_data():
                 r.get('status', 'live')
             ])
     else:
-        # Fallback single header row
         writer.writerow(['No database records available'])
 
     response = make_response(output.getvalue())
@@ -160,6 +352,7 @@ def export_sensor_data():
 
 
 @authority_bp.route('/api/authority/send-sms', methods=['POST'])
+@require_role('authority_admin')
 def send_emergency_sms():
     """Simulated emergency SMS broadcast."""
     data = request.get_json(silent=True) or {}
@@ -177,6 +370,7 @@ def send_emergency_sms():
 
 
 @authority_bp.route('/api/authority/trigger-alert', methods=['POST'])
+@require_role('authority_admin')
 def trigger_alert():
     """Trigger system-wide environmental alert."""
     data     = request.get_json(silent=True) or {}
@@ -203,6 +397,7 @@ def trigger_alert():
 
 
 @authority_bp.route('/api/authority/generate-notice', methods=['POST'])
+@require_role('authority_admin')
 def generate_legal_notice():
     """Generate legal notice document template."""
     notice_id = f"RS-NOT-2026-{random.randint(1000, 9999)}"

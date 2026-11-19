@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 const ReportPollution = () => {
     const [analyzing, setAnalyzing] = useState(false);
     const [reportData, setReportData] = useState<any>(null);
     const [image, setImage] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [location, setLocation] = useState("");
     const [description, setDescription] = useState("");
@@ -14,6 +16,7 @@ const ReportPollution = () => {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setSelectedFile(file);
             const reader = new FileReader();
             reader.onload = () => {
                 setImage(reader.result as string);
@@ -66,9 +69,36 @@ const ReportPollution = () => {
 
         setSubmitting(true);
         try {
+            // Check for authenticated Supabase session
+            let token: string | undefined;
+            let storagePath: string | null = null;
+            try {
+                const { data: sessionData } = await supabase.auth.getSession();
+                const session = sessionData?.session;
+                token = session?.access_token;
+                const user = session?.user;
+
+                // If user is authenticated and selected a file, upload to private Supabase Storage
+                if (user && selectedFile) {
+                    const ext = selectedFile.name.split('.').pop() || 'jpg';
+                    const safeName = `${user.id}/${Date.now()}.${ext}`;
+                    const { data: uploadData, error: uploadErr } = await supabase.storage
+                        .from('pollution-evidence')
+                        .upload(safeName, selectedFile);
+                    if (!uploadErr && uploadData) {
+                        storagePath = uploadData.path;
+                    }
+                }
+            } catch (authErr) {
+                console.warn("[Storage] Storage upload skipped:", authErr);
+            }
+
             const response = await fetch(`${backendUrl}/api/reports/submit`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({
                     imageUrl: image,
                     location: location || "Near Dashashwamedh Ghat",
@@ -76,7 +106,8 @@ const ReportPollution = () => {
                     pollution_level: reportData.severity,
                     pollutants: reportData.types,
                     assessment: reportData.description,
-                    reporter: "Citizen App"
+                    reporter: "Citizen App",
+                    storage_path: storagePath
                 })
             });
 
@@ -85,6 +116,7 @@ const ReportPollution = () => {
                 alert("Report submitted successfully to Authority!");
                 // Reset form
                 setImage(null);
+                setSelectedFile(null);
                 setReportData(null);
                 setLocation("");
                 setDescription("");

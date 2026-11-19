@@ -135,6 +135,12 @@ def ingest_telemetry():
             'latitude': float(data.get('latitude', 25.3176)),
             'longitude': float(data.get('longitude', 82.9739))
         }
+        if data.get('station_id'):
+            record['station_id'] = data.get('station_id')
+        if data.get('device_id'):
+            record['device_id'] = data.get('device_id')
+        if data.get('quality_status'):
+            record['quality_status'] = data.get('quality_status')
 
         res = supabase_insert('sensor_readings', record)
         if res:

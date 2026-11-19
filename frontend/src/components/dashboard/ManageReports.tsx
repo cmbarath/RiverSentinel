@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 const ManageReports = () => {
     const [reports, setReports] = useState<any[]>([]);
@@ -10,10 +11,26 @@ const ManageReports = () => {
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
+    const getAuthHeaders = async (): Promise<Record<string, string>> => {
+        try {
+            const { data } = await supabase.auth.getSession();
+            const token = data?.session?.access_token;
+            if (token) {
+                return { 'Authorization': `Bearer ${token}` };
+            }
+        } catch {
+            // ignore session retrieval error
+        }
+        return {};
+    };
+
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${backendUrl}/api/authority/reports`);
+            const authHeaders = await getAuthHeaders();
+            const response = await fetch(`${backendUrl}/api/authority/reports`, {
+                headers: authHeaders
+            });
             const data = await response.json();
             setReports(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -29,9 +46,13 @@ const ManageReports = () => {
 
     const handleStatusUpdate = async (reportId: string, status: string) => {
         try {
+            const authHeaders = await getAuthHeaders();
             const response = await fetch(`${backendUrl}/api/authority/reports/update`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders
+                },
                 body: JSON.stringify({ reportId, status })
             });
             const data = await response.json();
