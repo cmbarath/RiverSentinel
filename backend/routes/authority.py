@@ -79,9 +79,9 @@ def get_monitoring_stations():
             'location_name': 'Assi Ghat, Varanasi, UP, India',
             'latitude': 25.2891,
             'longitude': 83.0067,
-            'status': 'active',
-            'warning_water_level_m': 71.26,
-            'danger_water_level_m': 73.23
+            'status': 'planned',
+            'warning_water_level_m': 70.26,
+            'danger_water_level_m': 71.26
         }]
     })
 
@@ -107,9 +107,9 @@ def create_monitoring_station():
         'location_name': data.get('location_name', station_name),
         'latitude': float(lat),
         'longitude': float(lon),
-        'warning_water_level_m': float(data.get('warning_water_level_m', 71.26)),
-        'danger_water_level_m': float(data.get('danger_water_level_m', 73.23)),
-        'status': data.get('status', 'active')
+        'warning_water_level_m': float(data.get('warning_water_level_m', 70.26)),
+        'danger_water_level_m': float(data.get('danger_water_level_m', 71.26)),
+        'status': data.get('status', 'planned')
     }
 
     res = supabase_insert('monitoring_stations', new_station)

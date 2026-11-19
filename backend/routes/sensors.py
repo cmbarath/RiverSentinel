@@ -1,12 +1,16 @@
 """
 Sensors & Telemetry Routes Blueprint
-Handles live sensor telemetry retrieval, citizen health status, and authenticated telemetry ingestion.
+Handles live sensor telemetry retrieval, citizen health status, simulator ingestion,
+and production authenticated IoT edge device telemetry ingestion.
 """
 
 from flask import Blueprint, jsonify, request
 import os
 import time
-from services.supabase_service import get_latest_sensor_reading, supabase_insert
+import uuid
+from datetime import datetime, timezone
+from services.supabase_service import get_latest_sensor_reading, supabase_insert, supabase_get
+from services.device_auth_service import verify_device_credentials, touch_device_activity
 
 sensors_bp = Blueprint('sensors', __name__)
 
@@ -82,25 +86,32 @@ def get_latest_sensor():
         'provenance':        raw_provenance,
         'is_simulated':      (raw_provenance == 'simulated'),
         'is_real':           (raw_provenance == 'real'),
+        'quality_status':    reading.get('quality_status', 'valid'),
         'temperature_error': temperature_error,
         'water_level_error': water_level_error
     })
 
 
+# ============================================================================
+# SIMULATOR INGESTION ENDPOINT (DEVELOPMENT & TEST ONLY)
+# ============================================================================
+
 @sensors_bp.route('/api/telemetry/simulate', methods=['POST'])
-@sensors_bp.route('/api/v1/telemetry/ingest', methods=['POST'])
-def ingest_telemetry():
+def ingest_simulator_telemetry():
     """
-    Authenticated telemetry ingestion endpoint for simulator and IoT edge devices.
-    Requires X-Simulator-Token or X-Device-Token header.
+    Dedicated simulator ingestion endpoint.
+    Strictly isolated from physical hardware:
+    - Authenticated via X-Simulator-Token.
+    - Provenance is hardcoded to 'simulated'.
+    - device_id is strictly NULL to prevent impersonation of physical hardware.
     """
-    token = request.headers.get('X-Simulator-Token') or request.headers.get('X-Device-Token') or ''
+    token = request.headers.get('X-Simulator-Token', '')
     expected_token = os.getenv('SIMULATOR_API_TOKEN', 'rs_sim_dev_sec_7a8f9c12')
 
     if not token or token != expected_token:
         return jsonify({
             'status': 'error',
-            'message': 'Unauthorized: Invalid or missing telemetry token'
+            'message': 'Unauthorized: Invalid or missing simulator token'
         }), 401
 
     data = request.get_json(silent=True) or {}
@@ -130,23 +141,20 @@ def ingest_telemetry():
             'bod': round(float(data.get('bod', 15.0)), 2),
             'cod': round(float(data.get('cod', 75.0)), 2),
             'do': round(do_val, 2),
-            'provenance': data.get('provenance', 'simulated'),
+            'provenance': 'simulated',
             'status': data.get('status', 'live'),
+            'quality_status': 'valid',
+            'device_id': None,  # Strictly NULL for simulated data
+            'station_id': data.get('station_id') if data.get('station_id') else None,
             'latitude': float(data.get('latitude', 25.3176)),
             'longitude': float(data.get('longitude', 82.9739))
         }
-        if data.get('station_id'):
-            record['station_id'] = data.get('station_id')
-        if data.get('device_id'):
-            record['device_id'] = data.get('device_id')
-        if data.get('quality_status'):
-            record['quality_status'] = data.get('quality_status')
 
         res = supabase_insert('sensor_readings', record)
         if res:
             return jsonify({
                 'status': 'success',
-                'message': 'Telemetry persisted successfully',
+                'message': 'Simulated telemetry persisted successfully',
                 'data': record
             }), 201
         else:
@@ -155,6 +163,234 @@ def ingest_telemetry():
     except (ValueError, TypeError) as ve:
         return jsonify({'status': 'error', 'message': f'Data format error: {ve}'}), 400
 
+
+# ============================================================================
+# PRODUCTION PHYSICAL IOT DEVICE TELEMETRY INGESTION ENDPOINT (PHASE 3A)
+# ============================================================================
+
+@sensors_bp.route('/api/v1/telemetry/ingest', methods=['POST'])
+def ingest_production_device_telemetry():
+    """
+    Production IoT Telemetry Ingestion Endpoint for ESP32-WROOM-32 Hardware.
+    
+    Authentication:
+        - X-Device-Code: Registered device code (e.g. DEV-ESP32-ASSI-01)
+        - X-Device-Token: High-entropy pre-shared device token (rs_dev_...)
+        (Also accepts payload fields device_code & device_token if headers absent)
+    
+    Validation:
+        - Versioned contract (schema_version == '2.0')
+        - Constant-time SHA-256 token verification
+        - Lifecycle state enforcement (provisioned -> transitions to online)
+        - Server-derived station association (client station_id is ignored)
+        - Message idempotency and duplicate rejection (UUID message_id)
+        - Physical bounds checking & explicit quality status tagging
+        - Device activity touching & telemetry audit logging
+    """
+    start_time = time.time()
+
+    # 1. Extract device identification & credential
+    device_code = request.headers.get('X-Device-Code') or ''
+    device_token = request.headers.get('X-Device-Token') or ''
+
+    data = request.get_json(silent=True) or {}
+    if not device_code and 'device_code' in data:
+        device_code = str(data['device_code']).strip()
+    if not device_token and 'device_token' in data:
+        device_token = str(data['device_token']).strip()
+
+    if not device_code or not device_token:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'UNAUTHORIZED',
+            'message': 'Missing X-Device-Code or X-Device-Token headers'
+        }), 401
+
+    # 2. Cryptographic & Lifecycle Authentication
+    is_valid, device, auth_err = verify_device_credentials(device_code, device_token)
+    if not is_valid or not device:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'AUTHENTICATION_FAILED',
+            'message': auth_err or 'Device authentication failed'
+        }), 401
+
+    device_id = device['id']
+    station_id = device['station_id']  # Server-derived; client station_id is untrusted
+
+    # 3. Payload Schema Validation
+    schema_version = data.get('schema_version')
+    if schema_version != '2.0':
+        return jsonify({
+            'status': 'error',
+            'error_code': 'INVALID_SCHEMA',
+            'message': f"Unsupported schema_version '{schema_version}'. Expected '2.0'."
+        }), 400
+
+    raw_msg_id = data.get('message_id')
+    if not raw_msg_id:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'MISSING_MESSAGE_ID',
+            'message': 'Field message_id is required.'
+        }), 400
+
+    try:
+        message_id = str(uuid.UUID(str(raw_msg_id)))
+    except (ValueError, TypeError):
+        return jsonify({
+            'status': 'error',
+            'error_code': 'INVALID_MESSAGE_ID',
+            'message': f"message_id '{raw_msg_id}' is not a valid UUID."
+        }), 400
+
+    seq_num = data.get('sequence_number')
+    if seq_num is None or not isinstance(seq_num, int) or seq_num < 1:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'INVALID_SEQUENCE_NUMBER',
+            'message': 'sequence_number must be a positive integer >= 1.'
+        }), 400
+
+    observed_at_str = data.get('observed_at')
+    if not observed_at_str:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'MISSING_TIMESTAMP',
+            'message': 'observed_at timestamp is required.'
+        }), 400
+
+    try:
+        # Validate ISO 8601 UTC timestamp format
+        observed_dt = datetime.fromisoformat(observed_at_str.replace('Z', '+00:00'))
+    except Exception as te:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'INVALID_TIMESTAMP',
+            'message': f"observed_at must be valid ISO 8601 UTC: {te}"
+        }), 400
+
+    # 4. Duplicate Message Protection (Idempotency)
+    existing = supabase_get('sensor_readings', filters={'device_message_id': f'eq.{message_id}'}, limit=1)
+    if existing and isinstance(existing, list) and len(existing) > 0:
+        return jsonify({
+            'status': 'conflict',
+            'error_code': 'DUPLICATE_MESSAGE',
+            'message': f"Message {message_id} was already processed and persisted.",
+            'persisted_at': existing[0].get('created_at')
+        }), 409
+
+    # 5. Extract Sensor Measurements & Sensor Status
+    sensors = data.get('sensor_readings')
+    if not sensors or not isinstance(sensors, dict):
+        return jsonify({
+            'status': 'error',
+            'error_code': 'MISSING_READINGS',
+            'message': 'sensor_readings dictionary is required.'
+        }), 400
+
+    sensor_status = data.get('sensor_status', {})
+    overall_quality = 'valid'
+
+    def parse_measurement(key: str, min_val: float, max_val: float):
+        nonlocal overall_quality
+        status = sensor_status.get(key, 'valid')
+        if status in ('disconnected', 'missing', 'failed'):
+            overall_quality = 'degraded' if overall_quality == 'valid' else overall_quality
+            return None, status
+        
+        val = sensors.get(key)
+        if val is None:
+            return None, 'missing'
+        
+        try:
+            val_f = float(val)
+        except (ValueError, TypeError):
+            overall_quality = 'suspect'
+            return None, 'invalid_type'
+
+        if val_f < min_val or val_f > max_val:
+            overall_quality = 'out_of_range'
+            return val_f, 'out_of_range'
+
+        return round(val_f, 2), 'valid'
+
+    ph_val, ph_q = parse_measurement('ph', 0.0, 14.0)
+    turb_val, turb_q = parse_measurement('turbidity', 0.0, 3000.0)
+    temp_val, temp_q = parse_measurement('temperature', -10.0, 60.0)
+    humidity_val, _ = parse_measurement('humidity', 0.0, 100.0)
+    ec_val, _ = parse_measurement('ec', 0.0, 10000.0)
+    wl_val, wl_q = parse_measurement('water_level', 0.0, 100.0)
+    do_val, do_q = parse_measurement('do', 0.0, 25.0)
+
+    # Note: Physical sensors on ESP32 cannot directly measure biological or chemical oxygen demand.
+    # BOD & COD from edge devices are ignored to preserve data scientific integrity.
+    battery_pct = sensors.get('battery_level_pct', sensors.get('battery_pct'))
+
+    record = {
+        'station_id': station_id,
+        'device_id': device_id,
+        'device_message_id': message_id,
+        'observed_at': observed_dt.isoformat(),
+        'received_at': datetime.now(timezone.utc).isoformat(),
+        'ph': ph_val,
+        'turbidity': turb_val,
+        'temperature': temp_val,
+        'humidity': humidity_val,
+        'ec': ec_val,
+        'water_level': wl_val,
+        'do': do_val,
+        'bod': None,  # Preserved as NULL for physical edge telemetry
+        'cod': None,  # Preserved as NULL for physical edge telemetry
+        'provenance': 'real_sensor',
+        'status': 'live',
+        'quality_status': overall_quality
+    }
+
+    # 6. Database Persistence
+    res = supabase_insert('sensor_readings', record)
+    if not res:
+        return jsonify({
+            'status': 'error',
+            'error_code': 'PERSISTENCE_FAILED',
+            'message': 'Failed to insert telemetry into authoritative database.'
+        }), 500
+
+    # 7. Device Activity Update (Lifecycle Transition to 'online')
+    fw_version = data.get('firmware_version', 'v1.0.0')
+    touch_device_activity(device_id, battery_level=battery_pct, firmware_ver=fw_version)
+
+    # 8. Telemetry Audit Log Entry
+    proc_time_ms = round((time.time() - start_time) * 1000, 2)
+    telemetry_log = {
+        'device_id': device_id,
+        'device_code': device_code,
+        'message_id': message_id,
+        'sequence_number': seq_num,
+        'observed_at': observed_dt.isoformat(),
+        'ip_address': request.remote_addr,
+        'payload_size_bytes': len(request.data or b''),
+        'validation_status': overall_quality,
+        'processing_time_ms': proc_time_ms
+    }
+    supabase_insert('device_telemetry_logs', telemetry_log)
+
+    return jsonify({
+        'status': 'success',
+        'message': 'Telemetry ingested and verified successfully',
+        'device_code': device_code,
+        'station_id': station_id,
+        'message_id': message_id,
+        'sequence_number': seq_num,
+        'quality_status': overall_quality,
+        'server_timestamp': datetime.now(timezone.utc).isoformat(),
+        'processing_time_ms': proc_time_ms
+    }), 201
+
+
+# ============================================================================
+# CITIZEN HEALTH STATUS ENDPOINT
+# ============================================================================
 
 @sensors_bp.route('/api/citizen/health-status', methods=['GET'])
 def get_citizen_health_status():

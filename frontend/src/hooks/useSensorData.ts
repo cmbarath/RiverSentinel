@@ -12,7 +12,7 @@ export interface SensorReadings {
     do: number;
     timestamp?: number;
     status?: string;
-    provenance?: 'real' | 'simulated' | 'default' | 'unavailable';
+    provenance?: 'real' | 'real_sensor' | 'simulated' | 'default' | 'unavailable';
     is_simulated?: boolean;
     is_real?: boolean;
     temperature_error?: boolean;

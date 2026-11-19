@@ -43,9 +43,16 @@ BASIN_CHARACTERISTICS = {
     'network_density': 0.42  # Drainage density km/km²
 }
 
-# Flood thresholds for Varanasi (meters)
-WARNING_LEVEL = 71.26
-DANGER_LEVEL = 73.23
+# Official CWC Reference Gauge Flood Thresholds for Varanasi (meters above MSL)
+# Source: Central Water Commission (CWC) Flood Forecasting and Warning Network Performance Appraisal Report 2024, Annex II
+# Site: Varanasi (Ganga River), Lat ~25.33, Lon ~83.04, Datum: GTS Mean Sea Level (MSL)
+CWC_WARNING_LEVEL = 70.26
+CWC_DANGER_LEVEL = 71.26
+CWC_HIGHEST_FLOOD_LEVEL = 73.90
+
+# Backward compatible aliases
+WARNING_LEVEL = CWC_WARNING_LEVEL
+DANGER_LEVEL = CWC_DANGER_LEVEL
 
 def calculate_discharge(water_level: float) -> float:
     """

@@ -23,10 +23,10 @@ interface MonitoringStation {
 }
 
 const DEFAULT_STATIONS: MonitoringStation[] = [
-    { id: "1", station_code: "STN-VAR-ASSI-01", station_name: "Assi Ghat Monitoring Station", latitude: 25.2891, longitude: 83.0067, status: "active", location_name: "Assi Ghat, Varanasi" },
-    { id: "2", station_code: "STN-VAR-DASH-02", station_name: "Dashashwamedh Ghat Station", latitude: 25.3061, longitude: 83.0104, status: "active", location_name: "Dashashwamedh Ghat, Varanasi" },
-    { id: "3", station_code: "STN-VAR-MANI-03", station_name: "Manikarnika Ghat Station", latitude: 25.3110, longitude: 83.0125, status: "active", location_name: "Manikarnika Ghat, Varanasi" },
-    { id: "4", station_code: "STN-VAR-RAJG-04", station_name: "Rajghat Monitoring Station", latitude: 25.3267, longitude: 83.0335, status: "active", location_name: "Rajghat, Varanasi" },
+    { id: "1", station_code: "STN-VAR-ASSI-01", station_name: "Assi Ghat Monitoring Station", latitude: 25.2891, longitude: 83.0067, status: "planned", location_name: "Assi Ghat, Varanasi", warning_water_level_m: 70.26, danger_water_level_m: 71.26 },
+    { id: "2", station_code: "STN-VAR-DASH-02", station_name: "Dashashwamedh Ghat Station", latitude: 25.3061, longitude: 83.0104, status: "planned", location_name: "Dashashwamedh Ghat, Varanasi", warning_water_level_m: 70.26, danger_water_level_m: 71.26 },
+    { id: "3", station_code: "STN-VAR-MANI-03", station_name: "Manikarnika Ghat Station", latitude: 25.3110, longitude: 83.0125, status: "planned", location_name: "Manikarnika Ghat, Varanasi", warning_water_level_m: 70.26, danger_water_level_m: 71.26 },
+    { id: "4", station_code: "STN-VAR-RAJG-04", station_name: "Rajghat Monitoring Station", latitude: 25.3267, longitude: 83.0335, status: "planned", location_name: "Rajghat, Varanasi", warning_water_level_m: 70.26, danger_water_level_m: 71.26 },
 ];
 
 const InteractiveMap = () => {
@@ -77,11 +77,13 @@ const InteractiveMap = () => {
                             <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{s.station_name}</div>
                             <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>Code: {s.station_code}</div>
                             <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                                Status: <span style={{ color: s.status === 'active' ? '#10b981' : '#ef4444', fontWeight: 600 }}>{s.status.toUpperCase()}</span>
+                                Status: <span style={{ color: s.status === 'active' ? '#10b981' : s.status === 'planned' ? '#d97706' : '#ef4444', fontWeight: 600 }}>
+                                    {s.status === 'planned' ? 'PLANNED (DEPLOYMENT PENDING)' : s.status.toUpperCase()}
+                                </span>
                             </div>
                             {s.warning_water_level_m && (
                                 <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
-                                    Warning Level: {s.warning_water_level_m}m | Danger: {s.danger_water_level_m}m
+                                    Warning: {s.warning_water_level_m}m | Danger: {s.danger_water_level_m}m <span style={{ fontSize: '0.7rem', color: '#64748b' }}>(CWC Baseline)</span>
                                 </div>
                             )}
                         </Popup>

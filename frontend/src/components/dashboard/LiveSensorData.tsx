@@ -15,9 +15,9 @@ const LiveSensorData = () => {
 
     const getProvenanceBadge = () => {
         if (loading) return '⏳ Loading sensor data...';
-        if (readings.provenance === 'real') return '🟢 Live Hardware Stream (Arduino/ESP32 Node)';
-        if (readings.provenance === 'simulated') return '🟡 Simulated Stream (Demo Telemetry)';
-        return '⚪ Default Baseline (Sensors Inactive / Offline)';
+        if (readings.provenance === 'real' || readings.provenance === 'real_sensor') return '🟢 Live Hardware Stream (Physical ESP32 Node)';
+        if (readings.provenance === 'simulated') return '🟡 Software Simulation Stream (Synthetic Telemetry)';
+        return '⚪ Default Baseline (Sensors Inactive / Physical Nodes Awaiting Deployment)';
     };
 
     const sensors = [
@@ -107,6 +107,9 @@ const LiveSensorData = () => {
                         ))}
                     </tbody>
                 </table>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.75rem', padding: '0 0.5rem' }}>
+                    * <strong>Measurement Provenance Notice:</strong> pH, Turbidity, Temperature, EC, Water Level, and Dissolved Oxygen (DO) are acquired via direct in-situ sensor probes. BOD and COD values represent laboratory and calibration references and are not direct physical field probe measurements.
+                </div>
             </div>
 
             {/* Error Warnings */}

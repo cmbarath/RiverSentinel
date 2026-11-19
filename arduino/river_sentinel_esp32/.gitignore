@@ -1,0 +1,6 @@
+# River Sentinel ESP32 Local Secrets
+config.h
+*.bin
+*.elf
+build/
+.vscode/
