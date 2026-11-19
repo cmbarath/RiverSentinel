@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface Station {
     id: string;
@@ -73,7 +74,6 @@ interface SafetyEvaluationResponse {
     };
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 export default function SafetyChecker() {
     const [stations, setStations] = useState<Station[]>([]);

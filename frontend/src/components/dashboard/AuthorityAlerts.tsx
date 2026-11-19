@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface StationMeta {
     id: string;
@@ -62,7 +63,6 @@ interface AlertRule {
     rule_version?: number;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 export default function AuthorityAlerts() {
     const [alerts, setAlerts] = useState<AlertItem[]>([]);

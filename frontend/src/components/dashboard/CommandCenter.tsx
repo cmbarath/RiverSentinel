@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface StationData {
     id: string;
@@ -33,7 +34,6 @@ interface AlertItem {
     color: 'red' | 'orange' | 'blue';
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 export default function CommandCenter() {
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info' | null, msg: string }>({ type: null, msg: '' });

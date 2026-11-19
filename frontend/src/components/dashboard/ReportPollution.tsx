@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface AIReportAnalysis {
     pollution: string;
@@ -35,7 +36,7 @@ const ReportPollution = () => {
         }
     };
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = BACKEND_URL;
 
     const analyzeWithAI = (file: File) => {
         setAnalyzing(true);

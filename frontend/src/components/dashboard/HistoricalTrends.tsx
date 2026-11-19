@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { BACKEND_URL } from "@/lib/apiConfig";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line, Legend, ReferenceLine
@@ -62,7 +63,6 @@ interface ReadingsResponse {
     };
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 const PARAMETERS = [
     { key: "all", label: "Overview (All Key Parameters)", unit: "" },

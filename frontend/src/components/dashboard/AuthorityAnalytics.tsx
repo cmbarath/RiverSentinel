@@ -6,6 +6,7 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from "recharts";
 import { supabase } from "@/lib/supabaseClient";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface AnalyticsOverview {
     status: string;
@@ -59,7 +60,6 @@ interface StationItem {
     };
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 const LIFECYCLE_COLORS: Record<string, string> = {
     active: '#10b981',

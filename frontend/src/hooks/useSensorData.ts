@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BACKEND_URL } from '@/lib/apiConfig';
 
 export interface SensorReadings {
     ph: number;
@@ -35,7 +36,6 @@ const defaultReadings: SensorReadings = {
     is_real: false
 };
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 export const useSensorData = () => {
     const [readings, setReadings] = useState<SensorReadings>(defaultReadings);

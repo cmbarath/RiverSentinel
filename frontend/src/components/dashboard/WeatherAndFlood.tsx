@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface WeatherData {
     temperature: number;
@@ -48,7 +49,7 @@ const WeatherAndFlood = () => {
     useEffect(() => {
         const fetchWeather = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/weather`);
+                const response = await fetch(`${BACKEND_URL}/api/weather`);
                 const data = await response.json();
                 setWeather(data);
                 setLoading(false);
@@ -69,7 +70,7 @@ const WeatherAndFlood = () => {
     useEffect(() => {
         const fetchFloodPrediction = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/flood/predict`);
+                const response = await fetch(`${BACKEND_URL}/api/flood/predict`);
                 const data = await response.json();
                 setFloodPrediction(data);
                 console.log('Flood prediction:', data);

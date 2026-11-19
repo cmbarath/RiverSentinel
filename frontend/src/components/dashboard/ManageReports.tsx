@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface PollutionReport {
     id: string;
@@ -24,7 +25,7 @@ const ManageReports = () => {
     const [selectedReport, setSelectedReport] = useState<PollutionReport | null>(null);
     const [filter, setFilter] = useState("All Status");
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = BACKEND_URL;
 
     const getAuthHeaders = useCallback(async (): Promise<Record<string, string>> => {
         try {

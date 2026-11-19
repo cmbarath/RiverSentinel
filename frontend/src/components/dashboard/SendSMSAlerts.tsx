@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface SMSResult {
     status?: string;

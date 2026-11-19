@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface RiverHealthReportData {
     status: string;
@@ -24,8 +25,7 @@ const DownloadReport = () => {
     const fetchHealthStatus = async () => {
         setLoading(true);
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-            const response = await fetch(`${backendUrl}/api/citizen/health-status`);
+            const response = await fetch(`${BACKEND_URL}/api/citizen/health-status`);
             const result = await response.json();
             if (result.status === 'success') {
                 setData(result);

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 // Dynamic import for Leaflet (SSR-friendly)
 const MapContainer = dynamic(() => import("react-leaflet").then(m => m.MapContainer), { ssr: false });
@@ -40,11 +41,9 @@ const InteractiveMap = () => {
     const [stations, setStations] = useState<MonitoringStation[]>(DEFAULT_STATIONS);
     const [loadingStations, setLoadingStations] = useState(true);
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-
     useEffect(() => {
         // Fetch real monitoring stations from River Sentinel backend API
-        fetch(`${backendUrl}/api/v1/stations`)
+        fetch(`${BACKEND_URL}/api/v1/stations`)
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success' && Array.isArray(data.stations) && data.stations.length > 0) {
@@ -57,7 +56,7 @@ const InteractiveMap = () => {
             .finally(() => {
                 setLoadingStations(false);
             });
-    }, [backendUrl]);
+    }, []);
 
     if (!isClient) {
         return (

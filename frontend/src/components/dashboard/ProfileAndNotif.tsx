@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface UserProfile {
     id: string;
@@ -61,7 +62,6 @@ interface PublicAlertItem {
     [key: string]: unknown;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 export const Notifications = () => {
     const [notifications, setNotifications] = useState<UserNotificationItem[]>([]);

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface FormalReportSummary {
     status: string;
@@ -31,8 +32,7 @@ const GenerateReports = () => {
     const fetchSummary = async () => {
         setLoading(true);
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-            const response = await fetch(`${backendUrl}/api/authority/report-summary`);
+            const response = await fetch(`${BACKEND_URL}/api/authority/report-summary`);
             const data = await response.json();
             if (data.status === 'success') {
                 setSummary(data);

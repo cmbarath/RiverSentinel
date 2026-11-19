@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSensorData } from "@/hooks/useSensorData";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 interface QualityPrediction {
     potable: boolean;
@@ -16,7 +17,7 @@ const WaterQuality = () => {
     const { readings } = useSensorData();
     const [prediction, setPrediction] = useState<QualityPrediction | null>(null);
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = BACKEND_URL;
 
     useEffect(() => {
         const fetchQualityPrediction = async () => {

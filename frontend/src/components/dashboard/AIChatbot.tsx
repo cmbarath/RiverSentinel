@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 // Language-specific greeting messages
 const greetings: Record<string, string> = {
@@ -71,7 +72,7 @@ const AIChatbot = () => {
         const checkAvailability = async () => {
             try {
                 const resp = await fetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/health`
+                    `${BACKEND_URL}/api/health`
                 );
                 const data = await resp.json();
                 setChatbotAvailable(!!data.chatbot);
@@ -151,7 +152,7 @@ const AIChatbot = () => {
         setLoading(true);
 
         // Call real AI backend with language parameter
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/ai/chat`, {
+        fetch(`${BACKEND_URL}/api/ai/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: currentInput, language: language })

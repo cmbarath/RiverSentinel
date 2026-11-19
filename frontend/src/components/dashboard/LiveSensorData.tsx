@@ -2,8 +2,7 @@
 
 import React from "react";
 import { useSensorData } from "@/hooks/useSensorData";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+import { BACKEND_URL } from "@/lib/apiConfig";
 
 const LiveSensorData = () => {
     const { readings, loading, refresh } = useSensorData();
