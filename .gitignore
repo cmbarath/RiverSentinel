@@ -47,3 +47,8 @@ backups/
 # Large Raw Datasets
 backend/data/raw/
 
+# Firmware Secrets and Local Hardware Config
+firmware/**/config.h
+*.local.h
+
+

@@ -2,8 +2,11 @@
 
 This directory contains the standalone Arduino IDE sketch for River Sentinel 2.0 IoT telemetry nodes, designed for the **ESP32-WROOM-32** microcontroller.
 
-> **IMPORTANT OPERATIONAL NOTICE:**  
-> Physical field installation of river sensors is intentionally **deferred**. River Sentinel 2.0 is currently in a production-hosted software release candidate state. This sketch operates in **Bench Diagnostic Mode** by default (`SENSORS_PHYSICALLY_ATTACHED = false`), sending deterministic baseline telemetry and tagging sensor status with diagnostic flags. Do NOT fabricate or claim live physical river readings.
+> **IMPORTANT OPERATIONAL NOTICE — NO-SENSOR SAFETY GUARDRAIL:**  
+> Physical field installation of river sensors is intentionally **deferred** to Phase 3B. River Sentinel 2.0 is currently in a production-hosted software release candidate state. This sketch operates in **Bench Diagnostic Mode** by default (`SENSORS_PHYSICALLY_ATTACHED = false`).
+> 
+> **CRITICAL BEHAVIOR:** In Bench Diagnostic Mode, telemetry transmission to `/api/v1/telemetry/ingest` is **STRICTLY SUPPRESSED**. Benchmark diagnostic frames are logged solely to the local Serial Monitor and are NEVER stored or transmitted as genuine physical river sensor observations. Never fabricate live sensor telemetry.
+
 
 ---
 
@@ -89,7 +92,7 @@ From the **Tools** menu, select:
 2. In Arduino IDE, click **Verify** (checkmark icon) to compile.
 3. Click **Upload** (arrow icon) to flash the firmware.
 4. Open the **Serial Monitor** at **115200 baud**.
-5. You should observe:
+5. You should observe (in Bench Diagnostic Mode with `SENSORS_PHYSICALLY_ATTACHED = false`):
    ```text
    🌊 River Sentinel 2.0 - ESP32 Telemetry Node (Arduino)
    ========================================================
@@ -100,8 +103,13 @@ From the **Tools** menu, select:
    [System] Hardware Mode:   BENCH DIAGNOSTIC SIMULATION
    [Wi-Fi] Connecting to SSID '...'... ✓ Connected! IP: 192.168.1.150
    [NTP] Synchronizing UTC time... ✓ UTC synchronized: 2026-11-19T22:50:00Z
-   [HTTP] POST /api/v1/telemetry/ingest (seq #1, 312 bytes)...
-   [HTTP] ✓ Ingestion Successful! HTTP 200
+   [Sample] Telemetry Frame seq #1 | 2026-11-19T22:50:00Z
+     - pH: 7.80 (bench_simulation) | Turbidity: 18.50 NTU (bench_simulation)
+     - Temp: 24.20 C (bench_simulation) | Water Level: 67.20 m (bench_simulation)
+     - EC: 380.0 uS/cm | DO: 7.40 mg/L | Battery: 98.0%
+   [SAFETY GUARDRAIL] SENSORS_PHYSICALLY_ATTACHED == false
+   [SAFETY GUARDRAIL] Telemetry transmission to /api/v1/telemetry/ingest suppressed.
+   [SAFETY GUARDRAIL] Benchmark diagnostics are logged to Serial only. Database integrity protected.
    ```
 
 ---
@@ -113,4 +121,9 @@ From the **Tools** menu, select:
   - `X-Device-Code`: Registered hardware identifier (e.g. `DEV-ESP32-ASSI-01`).
   - `X-Device-Token`: Pre-shared credential verified by constant-time SHA-256 on the backend.
 - **Idempotency:** Each frame generates an RFC 4122 UUID v4 `message_id` using the ESP32 hardware TRNG. Duplicates sent during network retries are safely deduplicated by the backend database.
-- **Offline Fault Tolerance:** If Wi-Fi or backend connectivity drops, readings are buffered in a bounded circular SRAM queue (up to 50 frames) and drained automatically once connectivity is restored.
+- **Offline Queue Volatility & Fault Tolerance:**
+  - If Wi-Fi or backend connectivity drops while physical sensors are active (`SENSORS_PHYSICALLY_ATTACHED = true`), readings are buffered in a bounded circular SRAM queue (up to 50 frames) and drained automatically once connectivity is restored.
+  - **RAM vs Flash Architecture:** The ring buffer is allocated in volatile ESP32 SRAM (`QueuedReading offlineBuffer[50]`). Buffer contents **DO NOT** survive an ESP32 power loss, brownout, or reboot. Persistent Flash/NVS/SD card storage is intentionally deferred to Phase 3B.
+- **Toolchain / Compilation:**
+  - Tested for compilation via Arduino IDE 2.3+ with `esp32 by Espressif Systems` core.
+  - If using CLI, requires `arduino-cli compile --fqbn esp32:esp32:esp32 RiverSentinelESP32.ino`. If `arduino-cli` is not installed on the host OS, Arduino IDE 2.x is the recommended official compiler interface.

@@ -55,7 +55,11 @@ struct QueuedReading {
     SensorData sensors;
 };
 
-// Circular Ring Buffer for Offline Telemetry
+// Circular Ring Buffer for Offline Telemetry (SRAM Allocated)
+// ARCHITECTURAL NOTE: The offline queue is allocated in volatile ESP32 SRAM.
+// It provides backpressure smoothing during transient Wi-Fi disruptions.
+// CRITICAL: Contents DO NOT survive a power loss, brownout, or reboot.
+// Persistent Flash/NVS/SD card storage is deferred to Phase 3B.
 QueuedReading offlineBuffer[OFFLINE_BUFFER_CAPACITY];
 int queueHead = 0;
 int queueTail = 0;
@@ -455,19 +459,35 @@ void loop() {
         Serial.printf("  - EC: %.1f uS/cm | DO: %.2f mg/L | Battery: %.1f%%\n",
                       sensors.ec, sensors.do_val, sensors.battery_pct);
 
-        // Attempt live transmission
-        bool transmitted = transmitTelemetry(messageId, seq, timestamp, sensors);
-
-        if (!transmitted) {
-            // Buffer in SRAM ring buffer if network failed
-            enqueueReading(messageId, seq, timestamp, sensors);
+        // --------------------------------------------------------------------
+        // CRITICAL NO-SENSOR SAFETY GUARDRAIL
+        // --------------------------------------------------------------------
+        // When physical sensors are not attached, the firmware operates in bench
+        // diagnostic mode. In this mode, telemetry transmission to the production
+        // ingestion endpoint (/api/v1/telemetry/ingest) is STRICTLY SUPPRESSED.
+        // Simulated or baseline values are printed to Serial only and never
+        // transmitted or queued as genuine physical river sensor observations.
+        // --------------------------------------------------------------------
+        if (!SENSORS_PHYSICALLY_ATTACHED) {
+            Serial.println(F("[SAFETY GUARDRAIL] SENSORS_PHYSICALLY_ATTACHED == false"));
+            Serial.println(F("[SAFETY GUARDRAIL] Telemetry transmission to /api/v1/telemetry/ingest suppressed."));
+            Serial.println(F("[SAFETY GUARDRAIL] Benchmark diagnostics are logged to Serial only. Database integrity protected."));
+            Serial.println(F("--------------------------------------------------------"));
         } else {
-            // If live transmission succeeded, drain any backlogged queue frames
-            if (queueCount > 0) {
-                drainOfflineQueue();
+            // Attempt live transmission with real physical sensor readings
+            bool transmitted = transmitTelemetry(messageId, seq, timestamp, sensors);
+
+            if (!transmitted) {
+                // Buffer in SRAM ring buffer if network failed
+                enqueueReading(messageId, seq, timestamp, sensors);
+            } else {
+                // If live transmission succeeded, drain any backlogged queue frames
+                if (queueCount > 0) {
+                    drainOfflineQueue();
+                }
             }
+            Serial.println(F("--------------------------------------------------------"));
         }
-        Serial.println(F("--------------------------------------------------------"));
     }
 
     delay(100);

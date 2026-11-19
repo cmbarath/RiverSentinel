@@ -1,24 +1,15 @@
-import requests
-import os
-import json
-from dotenv import load_dotenv
+"""
+Legacy Firebase Realtime DB Test (Phase 0 Archive).
+Firebase Realtime DB was permanently retired in Phase 2 in favor of Supabase PostgreSQL.
+Preserved for historical audit and marked skipped in unittest discover.
+"""
 
-load_dotenv()
+import unittest
 
-DB_URL = os.getenv('FIREBASE_DATABASE_URL')
-SECRET = os.getenv('FIREBASE_SECRET')
+@unittest.skip("Firebase Realtime DB retired in Phase 2 in favor of Supabase PostgreSQL")
+class TestFirebaseWriteLegacy(unittest.TestCase):
+    def test_legacy_firebase_connection(self):
+        pass
 
-if not DB_URL or not SECRET:
-    print("Error: Missing FIREBASE_DATABASE_URL or FIREBASE_SECRET")
-    exit(1)
-
-test_data = {"status": "test_write_successful", "timestamp": "now"}
-url = f"{DB_URL}/test_write.json?auth={SECRET}"
-
-print(f"Writing to {url}...")
-try:
-    response = requests.put(url, json=test_data)
-    print(f"Status Code: {response.status_code}")
-    print(f"Response: {response.text}")
-except Exception as e:
-    print(f"Error: {e}")
+if __name__ == '__main__':
+    unittest.main()
