@@ -1,9 +1,11 @@
 """
-River Sentinel 2.0 - Core Alert Generation & Lifecycle Engine (Phase 5)
+River Sentinel 2.0 - Core Alert Generation & Lifecycle Engine (Phase 5.1 Hardened)
 Provides:
 - Comprehensive evaluation of sensor observations against CPCB Class B and CWC benchmarks.
-- Deduplication keying, occurrence counting, and hysteresis.
-- Automated recovery verification without manual intervention.
+- Scientifically accurate CPCB Class B Outdoor Bathing assessment (pH, DO, BOD, Total Coliform).
+- Separation of operational turbidity investigation threshold from statutory CPCB limits.
+- Granular deduplication keying incorporating rule code, station ID, parameter, and device/report IDs.
+- Automated recovery verification with hysteresis buffer.
 - Hardware node offline detection adhering to runtime lifecycle rules.
 - Pollution report review alerting.
 - Transactional notification outbox enqueueing with strict simulation suppression.
@@ -23,6 +25,10 @@ CWC_WARNING_LEVEL_M = 70.26
 CWC_DANGER_LEVEL_M = 71.26
 CWC_HFL_M = 73.90
 
+# Operational Turbidity Screening Guideline (Project Investigation Guideline v2.0)
+TURBIDITY_INVESTIGATION_THRESHOLD_NTU = 100.0
+TURBIDITY_RECOVERY_THRESHOLD_NTU = 85.0
+
 
 def _generate_alert_code() -> str:
     """Generate a clean human-readable alert code: ALT-YYYYMMDD-XXXX."""
@@ -33,9 +39,127 @@ def _generate_alert_code() -> str:
 
 class AlertService:
     @staticmethod
+    def evaluate_cpcb_class_b_compliance(
+        ph: Optional[float],
+        do_v: Optional[float],
+        bod: Optional[float] = None,
+        total_coliform: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Evaluate statutory CPCB Primary Water Quality Criteria for Class B (Outdoor Bathing).
+        Official Requirements:
+          1. pH: 6.5 to 8.5
+          2. Dissolved Oxygen (DO): >= 5.0 mg/L
+          3. Biochemical Oxygen Demand (BOD 5-day 20°C): <= 3.0 mg/L
+          4. Total Coliform Organisms: <= 500 MPN/100 mL
+        
+        Statuses returned (strictly adhering to Phase 5.1 requirements):
+          - 'insufficient_data': neither pH nor DO is measured.
+          - 'partial_assessment': required laboratory parameters (BOD or Total Coliform) are missing.
+          - 'compliant_for_measured_parameters': all available measured parameters are within limits.
+          - 'non_compliant_for_measured_parameters': at least one measured parameter violates limits.
+        """
+        criteria_results = {}
+        missing = []
+        has_failure = False
+
+        # 1. pH (6.5 - 8.5)
+        if ph is not None:
+            passed = 6.5 <= ph <= 8.5
+            criteria_results['ph'] = {
+                'value': round(ph, 2), 'unit': 'pH', 'required': '6.5 to 8.5',
+                'passed': passed, 'measured': True
+            }
+            if not passed:
+                has_failure = True
+        else:
+            missing.append('pH (6.5 - 8.5)')
+            criteria_results['ph'] = {'value': None, 'unit': 'pH', 'required': '6.5 to 8.5', 'passed': False, 'measured': False}
+
+        # 2. DO (>= 5.0 mg/L)
+        if do_v is not None:
+            passed = do_v >= 5.0
+            criteria_results['dissolved_oxygen'] = {
+                'value': round(do_v, 2), 'unit': 'mg/L', 'required': '>= 5.0 mg/L',
+                'passed': passed, 'measured': True
+            }
+            if not passed:
+                has_failure = True
+        else:
+            missing.append('Dissolved Oxygen (>= 5.0 mg/L)')
+            criteria_results['dissolved_oxygen'] = {'value': None, 'unit': 'mg/L', 'required': '>= 5.0 mg/L', 'passed': False, 'measured': False}
+
+        # 3. BOD (<= 3.0 mg/L)
+        if bod is not None:
+            passed = bod <= 3.0
+            criteria_results['bod'] = {
+                'value': round(bod, 2), 'unit': 'mg/L', 'required': '<= 3.0 mg/L (5-day 20°C)',
+                'passed': passed, 'measured': True
+            }
+            if not passed:
+                has_failure = True
+        else:
+            missing.append('BOD (5-day 20°C <= 3.0 mg/L)')
+            criteria_results['bod'] = {'value': None, 'unit': 'mg/L', 'required': '<= 3.0 mg/L', 'passed': False, 'measured': False}
+
+        # 4. Total Coliform (<= 500 MPN/100 mL)
+        if total_coliform is not None:
+            passed = total_coliform <= 500.0
+            criteria_results['total_coliform'] = {
+                'value': round(total_coliform, 1), 'unit': 'MPN/100 mL', 'required': '<= 500 MPN/100 mL',
+                'passed': passed, 'measured': True
+            }
+            if not passed:
+                has_failure = True
+        else:
+            missing.append('Total Coliform (<= 500 MPN/100 mL)')
+            criteria_results['total_coliform'] = {'value': None, 'unit': 'MPN/100 mL', 'required': '<= 500 MPN/100 mL', 'passed': False, 'measured': False}
+
+        # Status determination
+        if ph is None and do_v is None and bod is None and total_coliform is None:
+            compliance_status = 'insufficient_data'
+            verdict = 'INSUFFICIENT_DATA'
+            full_declared = False
+            assessment_type = 'insufficient_data'
+        elif len(missing) > 0:
+            assessment_type = 'partial_assessment'
+            full_declared = False
+            if has_failure:
+                compliance_status = 'non_compliant_for_measured_parameters'
+                verdict = 'NON_COMPLIANT_FOR_MEASURED_PARAMETERS'
+            else:
+                compliance_status = 'compliant_for_measured_parameters'
+                verdict = 'COMPLIANT_FOR_MEASURED_PARAMETERS'
+        else:
+            # All 4 criteria present (full laboratory evaluation)
+            assessment_type = 'full_assessment'
+            full_declared = True
+            if has_failure:
+                compliance_status = 'non_compliant_for_measured_parameters'
+                verdict = 'CPCB_CLASS_B_NON_COMPLIANT'
+            else:
+                compliance_status = 'compliant_for_measured_parameters'
+                verdict = 'CPCB_CLASS_B_COMPLIANT'
+
+        return {
+            'compliance_status': compliance_status,
+            'verdict': verdict,
+            'assessment_type': assessment_type,
+            'full_class_b_declared': full_declared,
+            'criteria': criteria_results,
+            'missing_criteria': missing,
+            'disclaimer': (
+                "Statutory CPCB Class B (Outdoor Bathing) requires all 4 criteria: "
+                "pH (6.5-8.5), DO (>= 5 mg/L), BOD (<= 3 mg/L), and Total Coliform (<= 500 MPN/100 mL). "
+                "Turbidity is NOT a statutory CPCB Class B criterion. Real-time physical IoT sensors screen "
+                "in-situ physical/chemical parameters; full compliance cannot be certified without laboratory microbiological testing."
+            )
+        }
+
+    @staticmethod
     def evaluate_sensor_observation(reading: Dict[str, Any], station_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Evaluate a single telemetry observation against active alert rules.
+        Evaluate a single telemetry observation against active statutory and operational rules.
         Non-blocking: catches internal errors and logs without failing sensor ingestion.
         """
         created_or_updated_alerts = []
@@ -64,19 +188,19 @@ class AlertService:
 
             # ----------------------------------------------------------------
             # Rule 1: CWC Flood Stage Screening (Warning & Danger)
-            # Only evaluated if station has verified CWC gauge binding and GTS MSL datum
+            # Granular Key: RULE-CWC-FLOOD:{station_id}:water_level
+            # Evaluated ONLY if station has verified CWC gauge binding and GTS MSL datum
             # ----------------------------------------------------------------
             if wl is not None and has_cwc_gauge:
                 warning_thresh = float(station.get('warning_water_level_m') or CWC_WARNING_LEVEL_M)
                 danger_thresh = float(station.get('danger_water_level_m') or CWC_DANGER_LEVEL_M)
 
-                dedup_key = f"FLOOD:{sid or station_code}"
+                flood_dedup = f"RULE-CWC-FLOOD:{sid or station_code}:water_level"
 
                 if wl >= danger_thresh:
-                    # Trigger or escalate to CRITICAL
                     alt = AlertService._trigger_or_update_alert(
                         rule_code='RULE-CWC-FLOOD-DANGER',
-                        dedup_key=dedup_key,
+                        dedup_key=flood_dedup,
                         station_id=sid,
                         device_id=reading.get('device_id'),
                         category='FLOOD',
@@ -95,10 +219,9 @@ class AlertService:
                         created_or_updated_alerts.append(alt)
 
                 elif wl >= warning_thresh:
-                    # Trigger or maintain HIGH Warning
                     alt = AlertService._trigger_or_update_alert(
                         rule_code='RULE-CWC-FLOOD-WARN',
-                        dedup_key=dedup_key,
+                        dedup_key=flood_dedup,
                         station_id=sid,
                         device_id=reading.get('device_id'),
                         category='FLOOD',
@@ -118,20 +241,22 @@ class AlertService:
 
                 else:
                     # River level below warning threshold - Check for recovery!
-                    # Hysteresis: recovery threshold is 70.10m (0.16m below warning)
-                    if wl <= (warning_thresh - 0.15):
+                    # Hysteresis buffer: 0.15m below warning stage
+                    recovery_thresh = warning_thresh - 0.15
+                    if wl <= recovery_thresh:
                         AlertService._check_and_resolve_alert(
-                            dedup_key=dedup_key,
+                            dedup_key=flood_dedup,
                             current_val=wl,
-                            recovery_thresh=warning_thresh - 0.15,
-                            reason=f"Water level ({wl:.2f}m) has receded below CWC recovery threshold ({warning_thresh - 0.15:.2f}m MSL)."
+                            recovery_thresh=recovery_thresh,
+                            reason=f"Water level ({wl:.2f}m) has receded below CWC recovery threshold ({recovery_thresh:.2f}m MSL)."
                         )
 
             # ----------------------------------------------------------------
-            # Rule 2: CPCB Class B pH Standard (6.5 to 8.5)
+            # Rule 2: Statutory CPCB Class B pH Standard (6.5 to 8.5)
+            # Granular Key: RULE-CPCB-PH-RANGE:{station_id}:ph
             # ----------------------------------------------------------------
             if ph is not None:
-                ph_dedup = f"WATER_QUALITY_PH:{sid or station_code}"
+                ph_dedup = f"RULE-CPCB-PH-RANGE:{sid or station_code}:ph"
                 if ph < 6.5 or ph > 8.5:
                     alt = AlertService._trigger_or_update_alert(
                         rule_code='RULE-CPCB-PH-RANGE',
@@ -153,7 +278,6 @@ class AlertService:
                     if alt:
                         created_or_updated_alerts.append(alt)
                 elif 6.6 <= ph <= 8.4:
-                    # Recovered inside safe envelope
                     AlertService._check_and_resolve_alert(
                         dedup_key=ph_dedup,
                         current_val=ph,
@@ -162,10 +286,11 @@ class AlertService:
                     )
 
             # ----------------------------------------------------------------
-            # Rule 3: CPCB Class B Dissolved Oxygen (DO >= 5.0 mg/L)
+            # Rule 3: Statutory CPCB Class B Dissolved Oxygen (DO >= 5.0 mg/L)
+            # Granular Key: RULE-CPCB-DO-MIN:{station_id}:do
             # ----------------------------------------------------------------
             if do_v is not None:
-                do_dedup = f"WATER_QUALITY_DO:{sid or station_code}"
+                do_dedup = f"RULE-CPCB-DO-MIN:{sid or station_code}:do"
                 if do_v < 5.0:
                     severity = 'CRITICAL' if do_v < 3.0 else 'HIGH'
                     alt = AlertService._trigger_or_update_alert(
@@ -175,7 +300,7 @@ class AlertService:
                         device_id=reading.get('device_id'),
                         category='WATER_QUALITY',
                         severity=severity,
-                        title=f"Dissolved Oxygen Depletion: {station_name}",
+                        title=f"CPCB Class B Dissolved Oxygen Depletion: {station_name}",
                         description=f"Dissolved oxygen ({do_v:.1f} mg/L) is below statutory CPCB Class B minimum (5.0 mg/L). Risk of aquatic hypoxia.",
                         source_type='sensor_reading',
                         source_record_id=reading_id,
@@ -192,40 +317,42 @@ class AlertService:
                         dedup_key=do_dedup,
                         current_val=do_v,
                         recovery_thresh=5.2,
-                        reason=f"Dissolved oxygen ({do_v:.1f} mg/L) recovered above CPCB benchmark (5.0 mg/L)."
+                        reason=f"Dissolved oxygen ({do_v:.1f} mg/L) recovered above CPCB Class B benchmark (5.0 mg/L)."
                     )
 
             # ----------------------------------------------------------------
-            # Rule 4: Elevated Turbidity Peak (> 50 NTU)
+            # Rule 4: Operational Turbidity Investigation Threshold (100 NTU)
+            # Granular Key: RULE-TURB-HIGH:{station_id}:turbidity
+            # Note: Preserved as project investigation threshold; NOT a CPCB Class B criterion.
             # ----------------------------------------------------------------
             if turb is not None:
-                turb_dedup = f"WATER_QUALITY_TURB:{sid or station_code}"
-                if turb > 50.0:
+                turb_dedup = f"RULE-TURB-HIGH:{sid or station_code}:turbidity"
+                if turb > TURBIDITY_INVESTIGATION_THRESHOLD_NTU:
                     alt = AlertService._trigger_or_update_alert(
                         rule_code='RULE-TURB-HIGH',
                         dedup_key=turb_dedup,
                         station_id=sid,
                         device_id=reading.get('device_id'),
-                        category='WATER_QUALITY',
+                        category='OPERATIONAL_SCREENING',
                         severity='MEDIUM',
-                        title=f"Elevated Turbidity Peak: {station_name}",
-                        description=f"Turbidity ({turb:.1f} NTU) exceeds 50 NTU. Indicates heavy suspended silt or runoff influx.",
+                        title=f"High Turbidity Investigation: {station_name}",
+                        description=f"Turbidity ({turb:.1f} NTU) exceeds project-specific riparian investigation threshold (100 NTU). Operational screening indicator for suspended sediment or runoff; NOT an official CPCB Class B criterion. (Project Investigation Guideline v2.0).",
                         source_type='sensor_reading',
                         source_record_id=reading_id,
                         provenance=provenance,
                         quality_status=quality_status,
                         measured_value=turb,
-                        expected_threshold=50.0,
+                        expected_threshold=TURBIDITY_INVESTIGATION_THRESHOLD_NTU,
                         threshold_unit='NTU'
                     )
                     if alt:
                         created_or_updated_alerts.append(alt)
-                elif turb <= 40.0:
+                elif turb <= TURBIDITY_RECOVERY_THRESHOLD_NTU:
                     AlertService._check_and_resolve_alert(
                         dedup_key=turb_dedup,
                         current_val=turb,
-                        recovery_thresh=40.0,
-                        reason=f"Turbidity ({turb:.1f} NTU) returned below standard threshold."
+                        recovery_thresh=TURBIDITY_RECOVERY_THRESHOLD_NTU,
+                        reason=f"Turbidity ({turb:.1f} NTU) returned below operational investigation recovery threshold ({TURBIDITY_RECOVERY_THRESHOLD_NTU} NTU)."
                     )
 
         except Exception as e:
@@ -239,9 +366,10 @@ class AlertService:
         Evaluate device connectivity and runtime state.
         Crucial: Only installed and active physical devices trigger hardware-offline alerts.
         Provisioned devices awaiting installation are NOT reported as outages.
+        Granular Key: RULE-DEV-OFFLINE:{device_id}
         """
         lifecycle = device.get('status', 'provisioned')
-        if lifecycle != 'active':
+        if lifecycle not in ('active', 'online'):
             return None
 
         dev_id = str(device.get('id'))
@@ -250,10 +378,9 @@ class AlertService:
         sid = device.get('station_id')
 
         last_seen = device.get('last_seen_at')
-        dedup_key = f"DEVICE_OFFLINE:{dev_id}"
+        dedup_key = f"RULE-DEV-OFFLINE:{dev_id}"
 
         if not last_seen:
-            # Device is active but has never connected
             return None
 
         try:
@@ -282,7 +409,7 @@ class AlertService:
             )
             return alt
         else:
-            # Device has reconnected within 15 minutes!
+            # Device has reconnected within 15 minutes
             AlertService._check_and_resolve_alert(
                 dedup_key=dedup_key,
                 current_val=stale_seconds,
@@ -293,11 +420,14 @@ class AlertService:
 
     @staticmethod
     def evaluate_new_pollution_report(report: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Trigger an official review alert upon submission of a citizen pollution report."""
+        """
+        Trigger an official review alert upon submission of a citizen pollution report.
+        Granular Key: RULE-POLLUTION-NEW:{report_id}
+        """
         rep_id = str(report.get('id', ''))
         loc_name = report.get('location_name') or 'Varanasi Riparian Ghat'
         level = report.get('pollution_level', 'Moderate')
-        dedup_key = f"POLLUTION_REPORT:{rep_id}"
+        dedup_key = f"RULE-POLLUTION-NEW:{rep_id}"
 
         return AlertService._trigger_or_update_alert(
             rule_code='RULE-POLLUTION-NEW',
@@ -310,37 +440,45 @@ class AlertService:
             description=f"A citizen lodged pollution report #{rep_id[:8]} at {loc_name} (Severity: {level}). UPPCB authority field triage required.",
             source_type='pollution_report',
             source_record_id=rep_id,
-            provenance='real_sensor',
-            quality_status='valid',
-            measured_value=1,
-            expected_threshold=1,
-            threshold_unit='count'
+            provenance='manual_entry',
+            quality_status='provisional',
+            measured_value=1.0,
+            expected_threshold=1.0,
+            threshold_unit='report'
         )
 
     # ------------------------------------------------------------------------
-    # Internal Alert Creation, Deduplication & Recovery Helpers
+    # Internal Engine Mechanics
     # ------------------------------------------------------------------------
 
     @staticmethod
     def _trigger_or_update_alert(
         rule_code: str, dedup_key: str, station_id: Optional[str],
         device_id: Optional[str], category: str, severity: str,
-        title: str, description: str, source_type: str, source_record_id: str,
-        provenance: str, quality_status: str, measured_value: Optional[float],
+        title: str, description: str, source_type: str,
+        source_record_id: str, provenance: str, quality_status: str,
+        measured_value: Optional[float],
         expected_threshold: Optional[float], threshold_unit: str
     ) -> Optional[Dict[str, Any]]:
         """
         Deduplication Core:
-        - Checks for active or acknowledged alert with same deduplication_key.
+        - Resolves rule_id and rule_version from alert_rules.
+        - Checks for active or acknowledged alert with matching granular deduplication_key.
         - If active: updates occurrence count, last_triggered_at, and measured_value.
-        - If none: inserts new alert row, logs 'triggered' event, and enqueues notifications.
+          If escalated (e.g. Warning -> Danger), updates severity and title while preserving original rule in event audit log.
+        - If none: inserts new alert row with rule_id, logs 'triggered' event, and enqueues notifications.
         """
         now_dt = datetime.now(timezone.utc)
         now_iso = now_dt.isoformat()
 
+        # Lookup rule metadata
+        rule_row = execute_sql("SELECT id, rule_version FROM public.alert_rules WHERE rule_code = :rc LIMIT 1;", {'rc': rule_code})
+        rule_id = str(rule_row[0][0]) if rule_row else None
+        rule_version = int(rule_row[0][1]) if rule_row else 1
+
         # Check existing active/acknowledged alert
         sql = """
-            SELECT id, alert_code, status, occurrence_count, severity, last_triggered_at
+            SELECT id, alert_code, status, occurrence_count, severity, last_triggered_at, rule_id
             FROM public.system_alerts
             WHERE deduplication_key = :dedup_key AND status IN ('active', 'acknowledged')
             LIMIT 1;
@@ -353,7 +491,7 @@ class AlertService:
             cur_occ = existing[0][3]
             old_sev = existing[0][4]
 
-            # Escalation check: if new severity is higher (e.g. Warning -> Danger), update severity
+            # Escalation check: if new severity is higher (e.g. Warning -> Danger), update severity & rule_id
             update_sql = """
                 UPDATE public.system_alerts
                 SET occurrence_count = occurrence_count + 1,
@@ -362,24 +500,35 @@ class AlertService:
                     severity = CASE WHEN :sev = 'CRITICAL' THEN 'CRITICAL' ELSE severity END,
                     title = :title,
                     description = :desc,
+                    rule_id = COALESCE(:rid::uuid, rule_id),
+                    rule_version = COALESCE(:rver, rule_version),
                     updated_at = :now
                 WHERE id = :id::uuid
                 RETURNING id, alert_code, status, occurrence_count, severity;
             """
             execute_sql(update_sql, {
                 'id': alt_id, 'now': now_iso, 'mval': measured_value,
-                'sev': severity, 'title': title, 'desc': description
+                'sev': severity, 'title': title, 'desc': description,
+                'rid': rule_id, 'rver': rule_version
             })
 
-            # Log repeated or escalated event in alert_events
+            # Log repeated or escalated event in alert_events (preserving original rule traceability)
             event_type = 'escalated' if severity == 'CRITICAL' and old_sev != 'CRITICAL' else 'repeated'
+            event_meta = {
+                'occurrence': cur_occ + 1,
+                'measured_value': measured_value,
+                'rule_code': rule_code,
+                'rule_version': rule_version,
+                'previous_severity': old_sev,
+                'current_severity': 'CRITICAL' if severity == 'CRITICAL' else old_sev
+            }
             execute_sql("""
                 INSERT INTO public.alert_events (alert_id, event_type, metadata, created_at)
                 VALUES (:alt_id::uuid, :event_type, :meta::jsonb, :now);
             """, {
                 'alt_id': alt_id,
                 'event_type': event_type,
-                'meta': f'{{"occurrence": {cur_occ + 1}, "measured_value": {measured_value}}}',
+                'meta': json.dumps(event_meta),
                 'now': now_iso
             })
 
@@ -391,28 +540,30 @@ class AlertService:
                 'title': title,
                 'status': 'active',
                 'action': 'updated',
-                'occurrence_count': cur_occ + 1
+                'occurrence_count': cur_occ + 1,
+                'rule_code': rule_code
             }
 
         # Create brand new alert
         new_alert_code = _generate_alert_code()
         insert_sql = """
             INSERT INTO public.system_alerts (
-                alert_code, station_id, device_id, category, severity,
+                alert_code, rule_id, station_id, device_id, category, severity,
                 title, description, source_type, source_record_id, provenance,
                 quality_status, measured_value, expected_threshold, threshold_unit,
-                deduplication_key, status, occurrence_count, first_triggered_at,
-                last_triggered_at, created_at, updated_at
+                rule_version, deduplication_key, status, occurrence_count,
+                first_triggered_at, last_triggered_at, created_at, updated_at
             ) VALUES (
-                :code, :sid::uuid, :did::uuid, :cat, :sev,
+                :code, :rid::uuid, :sid::uuid, :did::uuid, :cat, :sev,
                 :title, :desc, :stype, :srec, :prov,
                 :qstat, :mval, :ethresh, :unit,
-                :dedup, 'active', 1, :now,
-                :now, :now, :now
+                :rver, :dedup, 'active', 1,
+                :now, :now, :now, :now
             ) RETURNING id, alert_code;
         """
         row = execute_sql(insert_sql, {
             'code': new_alert_code,
+            'rid': rule_id,
             'sid': station_id if station_id else None,
             'did': device_id if device_id else None,
             'cat': category,
@@ -426,6 +577,7 @@ class AlertService:
             'mval': measured_value,
             'ethresh': expected_threshold,
             'unit': threshold_unit,
+            'rver': rule_version,
             'dedup': dedup_key,
             'now': now_iso
         })
@@ -436,12 +588,19 @@ class AlertService:
         alt_id = str(row[0][0])
 
         # Log 'triggered' event in alert_events
+        trigger_meta = {
+            'rule_code': rule_code,
+            'rule_version': rule_version,
+            'initial_measured_value': measured_value,
+            'threshold': expected_threshold,
+            'threshold_unit': threshold_unit
+        }
         execute_sql("""
             INSERT INTO public.alert_events (alert_id, event_type, metadata, created_at)
             VALUES (:alt_id::uuid, 'triggered', :meta::jsonb, :now);
         """, {
             'alt_id': alt_id,
-            'meta': f'{{"initial_measured_value": {measured_value}, "threshold": {expected_threshold}}}',
+            'meta': json.dumps(trigger_meta),
             'now': now_iso
         })
 
@@ -466,7 +625,8 @@ class AlertService:
             'title': title,
             'status': 'active',
             'action': 'created',
-            'occurrence_count': 1
+            'occurrence_count': 1,
+            'rule_code': rule_code
         }
 
     @staticmethod
@@ -496,12 +656,17 @@ class AlertService:
         """, {'id': alt_id, 'now': now_iso, 'reason': reason})
 
         # Log 'resolved' event in alert_events
+        resolve_meta = {
+            'recovery_value': current_val,
+            'recovery_threshold': recovery_thresh,
+            'reason': reason
+        }
         execute_sql("""
             INSERT INTO public.alert_events (alert_id, event_type, metadata, created_at)
             VALUES (:alt_id::uuid, 'resolved', :meta::jsonb, :now);
         """, {
             'alt_id': alt_id,
-            'meta': f'{{"recovery_value": {current_val}, "recovery_threshold": {recovery_thresh}, "reason": "{reason}"}}',
+            'meta': json.dumps(resolve_meta),
             'now': now_iso
         })
 
@@ -515,6 +680,7 @@ class AlertService:
         - Resolves authorized recipients (Authority admins, assigned officers, consenting citizens).
         - Enqueues in-app delivery for all authorized users.
         - Enqueues SMS ONLY if provenance == 'real_sensor', user has verified phone, and user explicitly consented.
+        - If provenance == 'simulated', SMS is enqueued with status = 'suppressed' to safeguard external telephony.
         - Enforces idempotency via idempotency_key to prevent duplicate message dispatch.
         """
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -548,9 +714,15 @@ class AlertService:
                 if uid not in recipient_user_ids:
                     recipient_user_ids.append(uid)
 
-        # Enqueue in_app deliveries
+        # Enqueue deliveries
         for uid in recipient_user_ids:
             idempotency_key = f"{alert_id}:{uid}:in_app"
+            in_app_payload = {
+                'title': title,
+                'category': category,
+                'severity': severity,
+                'description': description
+            }
             execute_sql("""
                 INSERT INTO public.notification_deliveries (
                     alert_id, recipient_user_id, channel, provider, status,
@@ -563,7 +735,7 @@ class AlertService:
                 'alt_id': alert_id,
                 'uid': uid,
                 'idem': idempotency_key,
-                'payload': f'{{"title": "{title}", "category": "{category}", "severity": "{severity}", "description": "{description}"}}',
+                'payload': json.dumps(in_app_payload),
                 'now': now_iso
             })
 
@@ -577,7 +749,6 @@ class AlertService:
             """, {'uid': uid})
 
             if pref_rows and pref_rows[0][0] and pref_rows[0][1] and pref_rows[0][3]:
-                # User opted in, has verified phone, and consent timestamp
                 phone = pref_rows[0][3]
                 sms_idem = f"{alert_id}:{uid}:sms"
                 sms_text = format_sms_message(category, severity, 'Ganga Station', param or '', val or '', '', now_iso)
@@ -608,8 +779,8 @@ class AlertService:
     # ------------------------------------------------------------------------
 
     @staticmethod
-    def acknowledge_alert(alert_id: str, user_id: str, user_role: str, notes: Optional[str] = None) -> Dict[str, Any]:
-        """Acknowledge an active alert with role enforcement."""
+    def acknowledge_alert(alert_id: str, user_id: str, user_role: str, notes: str = "") -> Dict[str, Any]:
+        """Acknowledge an active alert (Field Officers & Authority Admins)."""
         if user_role not in ('authority_admin', 'field_officer'):
             raise PermissionError("Only Authority Administrators and Field Officers can acknowledge alerts.")
 

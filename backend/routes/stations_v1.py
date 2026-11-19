@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from services.supabase_service import execute_sql, supabase_get
 from services.auth_service import require_role
+from services.alert_service import AlertService
 
 stations_v1_bp = Blueprint('stations_v1', __name__)
 
@@ -792,24 +793,60 @@ def evaluate_station_safety_v1(station_id: str):
     q_status = r.get('quality_status', 'valid')
     provenance = r.get('provenance', 'real_sensor')
 
+    bod = float(r['bod']) if r.get('bod') is not None else None
+    total_coliform = float(r['total_coliform']) if r.get('total_coliform') is not None else None
+
     # Parameter Evaluations against Reference Standards
-    # 1. Bathing Safety (CPCB Class B: pH 6.5-8.5, DO >= 5.0 mg/L)
-    bathing_verdict = 'SAFE'
+    # 1. Statutory CPCB Class B Outdoor Bathing Assessment (pH, DO, BOD, Total Coliform)
+    # Turbidity is NOT a statutory CPCB Class B parameter and is evaluated separately below.
+    cpcb_eval = AlertService.evaluate_cpcb_class_b_compliance(
+        ph=ph,
+        do_v=do_v,
+        bod=bod,
+        total_coliform=total_coliform
+    )
+
+    compliance_status = cpcb_eval['compliance_status']
+    is_partial = cpcb_eval['assessment_type'] == 'partial_assessment'
+
+    # Determine backward-compatible suitability and verdict
+    if compliance_status == 'insufficient_data':
+        bathing_suitability = 'INSUFFICIENT_TELEMETRY'
+        bathing_verdict = 'INSUFFICIENT_DATA'
+    elif compliance_status == 'compliant_for_measured_parameters':
+        bathing_suitability = 'SUITABLE'
+        bathing_verdict = 'COMPLIANT_FOR_MEASURED_PARAMETERS' if is_partial else 'CPCB_CLASS_B_COMPLIANT'
+    else:
+        bathing_suitability = 'UNSUITABLE'
+        bathing_verdict = 'NON_COMPLIANT_FOR_MEASURED_PARAMETERS' if is_partial else 'CPCB_CLASS_B_NON_COMPLIANT'
+
     bathing_notes = []
     if ph is not None and (ph < 6.5 or ph > 8.5):
-        bathing_verdict = 'CAUTION'
-        bathing_notes.append(f"pH {ph} is outside CPCB Class B bathing range (6.5 - 8.5).")
+        bathing_notes.append(f"pH {ph} is outside CPCB Class B range (6.5 - 8.5).")
     if do_v is not None and do_v < 5.0:
-        bathing_verdict = 'UNSAFE'
         bathing_notes.append(f"Dissolved oxygen {do_v} mg/L is below CPCB Class B minimum (5.0 mg/L).")
-    if turb is not None and turb > 30.0:
-        bathing_verdict = 'CAUTION'
-        bathing_notes.append(f"Elevated turbidity ({turb} NTU) indicates sediment suspension or surface runoff.")
+    if is_partial:
+        bathing_notes.append("Partial screening: Laboratory BOD (<= 3.0 mg/L) and Total Coliform (<= 500 MPN/100 mL) are required for statutory certification.")
+    elif not bathing_notes:
+        bathing_notes.append("In-situ parameters meet CPCB Class B benchmarks for religious and recreational bathing.")
 
-    if not bathing_notes:
-        bathing_notes.append("In-situ parameters are within CPCB Class B limits for religious and recreational bathing.")
+    # 2. Operational Turbidity Screening (Project Investigation Guideline v2.0 - Non-statutory)
+    turb_investigation_threshold = 100.0
+    turb_screening_status = 'NORMAL'
+    turb_notes = []
+    if turb is not None:
+        if turb > turb_investigation_threshold:
+            turb_screening_status = 'INVESTIGATION_RECOMMENDED'
+            turb_notes.append(f"Turbidity ({turb} NTU) exceeds operational investigation threshold ({turb_investigation_threshold} NTU).")
+        elif turb > 30.0:
+            turb_screening_status = 'ELEVATED'
+            turb_notes.append(f"Elevated turbidity ({turb} NTU) indicates sediment suspension or surface runoff.")
+        else:
+            turb_notes.append(f"Turbidity ({turb} NTU) within baseline river conditions.")
+    else:
+        turb_notes.append("Turbidity unmeasured.")
 
-    # 2. Raw River Water Drinking Screening (BIS IS 10500:2012)
+    # 3. Raw River Water Drinking Screening (BIS IS 10500:2012)
     # Note: Raw river water is NEVER safe for direct drinking without conventional treatment and disinfection.
     drinking_verdict = 'TREATMENT_REQUIRED'
     drinking_notes = [
@@ -822,14 +859,14 @@ def evaluate_station_safety_v1(station_id: str):
     if ec is not None and ec > 1000.0:
         drinking_notes.append(f"High electrical conductivity ({ec} uS/cm) indicates elevated dissolved solids.")
 
-    # 3. Ecological Health
+    # 4. Ecological Health
     eco_verdict = 'HEALTHY'
     if do_v is not None and do_v < 4.0:
         eco_verdict = 'STRESSED'
     elif do_v is not None and do_v < 2.0:
         eco_verdict = 'HYPOXIC'
 
-    # 4. Calibration & Scientific Confidence
+    # 5. Calibration & Scientific Confidence
     confidence = 'HIGH' if (provenance == 'real_sensor' and q_status == 'valid') else 'PROVISIONAL'
     if q_status in ('uncalibrated', 'provisional'):
         confidence = 'UNCALIBRATED_PROVISIONAL'
@@ -866,6 +903,9 @@ def evaluate_station_safety_v1(station_id: str):
         'evaluations': {
             'bathing_suitability': {
                 'verdict': bathing_verdict,
+                'suitability': bathing_suitability,
+                'compliance_status': compliance_status,
+                'assessment_type': cpcb_eval['assessment_type'],
                 'standard': 'CPCB Primary Water Quality Criteria for Class B (Outdoor Bathing)',
                 'notes': bathing_notes
             },
@@ -877,17 +917,37 @@ def evaluate_station_safety_v1(station_id: str):
             'ecological_health': {
                 'verdict': eco_verdict,
                 'dissolved_oxygen_status': 'ADEQUATE' if (do_v and do_v >= 5.0) else 'SUBOPTIMAL'
+            },
+            'operational_turbidity_screening': {
+                'parameter': 'turbidity',
+                'value_ntu': turb,
+                'investigation_threshold_ntu': turb_investigation_threshold,
+                'status': turb_screening_status,
+                'is_cpcb_statutory': False,
+                'source_reference': 'Project Investigation Guideline v2.0',
+                'notes': turb_notes
             }
         },
         'bathing_water_screening': {
             'cpcb_class': 'Class B (Outdoor Bathing)',
-            'suitability': 'SUITABLE' if bathing_verdict == 'SAFE' else 'UNSUITABLE',
+            'suitability': bathing_suitability,
             'verdict': bathing_verdict,
-            'criteria': {
-                'ph': {'value': ph, 'requirement': '6.5 to 8.5', 'passed': (ph is not None and 6.5 <= ph <= 8.5)},
-                'dissolved_oxygen': {'value': do_v, 'requirement': '>= 5.0 mg/L', 'passed': (do_v is not None and do_v >= 5.0)}
-            },
-            'notes': ' '.join(bathing_notes)
+            'compliance_status': compliance_status,
+            'assessment_type': cpcb_eval['assessment_type'],
+            'full_class_b_declared': cpcb_eval['full_class_b_declared'],
+            'criteria': cpcb_eval['criteria'],
+            'missing_criteria': cpcb_eval['missing_criteria'],
+            'notes': ' '.join(bathing_notes),
+            'disclaimer': cpcb_eval['disclaimer']
+        },
+        'operational_screening': {
+            'parameter': 'turbidity',
+            'value_ntu': turb,
+            'investigation_threshold_ntu': turb_investigation_threshold,
+            'status': turb_screening_status,
+            'is_cpcb_statutory': False,
+            'source_reference': 'Project Investigation Guideline v2.0',
+            'notes': turb_notes
         },
         'drinking_water_screening': {
             'standard': 'Bureau of Indian Standards (BIS IS 10500:2012)',

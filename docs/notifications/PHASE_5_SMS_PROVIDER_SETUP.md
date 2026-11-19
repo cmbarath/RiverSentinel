@@ -1,8 +1,8 @@
-# River Sentinel 2.0 — Telephony SMS Gateway Configuration & Provider Integration
+# River Sentinel 2.0 — Telephony SMS Gateway Configuration & Regulatory Integration (Phase 5.1 Hardened)
 
 ## 1. Provider-Independent Architecture
 
-The River Sentinel 2.0 telephony subsystem is decoupled behind an abstract base class (`BaseSMSProvider`). The platform supports both local simulated providers and enterprise HTTP REST SMS gateways without modifying core application code:
+The River Sentinel 2.0 telephony subsystem is decoupled behind an abstract base class (`BaseSMSProvider`). The platform supports both local development mock providers and enterprise HTTP REST SMS aggregators without modifying core application code:
 
 ```python
 class BaseSMSProvider(ABC):
@@ -24,67 +24,83 @@ class BaseSMSProvider(ABC):
 
 ---
 
-## 2. Supported Providers
+## 2. Indian Telecom Regulatory Framework (TRAI TCCCPR 2018)
 
-### 2.1 `MockSMSProvider` (Default in Dev/Test)
-- **Environment**: `SMS_PROVIDER=mock`
-- **Behavior**: Simulates instantaneous carrier acceptance. Generates clean provider message IDs (e.g. `mock_sms_xxxx`) and records transmissions in memory.
-- **Cost**: ₹0.00.
-- **Safety**: Safe for offline testing, CI/CD, and simulated drills.
+In accordance with the Telecom Regulatory Authority of India (TRAI) Telecom Commercial Communications Customer Preference Regulations (TCCCPR, 2018) and Department of Telecommunications (DoT) directives, all transactional public safety messages must comply with the following statutory requirements:
 
-### 2.2 `HTTPGatewaySMSProvider` (Production CDAC / Twilio / MSG91)
-- **Environment**: `SMS_PROVIDER=http`
-- **Behavior**: Dispatches HTTP POST requests to the configured SMS aggregator REST endpoint with standardized JSON/form payloads.
-- **Payload Structure**:
-  ```json
-  {
-      "sender": "RIVSEN",
-      "recipient": "+919876543210",
-      "message": "[RiverSentinel] Ganga Assi Ghat: Water stage reached CWC DANGER level (71.35m). Consult Varanasi Disaster Control (1077). 2026-11-19 10:00",
-      "route": "transactional",
-      "dlt_template_id": "110716XXXXXXXXX"
-  }
-  ```
+### 2.1 Distributed Ledger Technology (DLT) Registration
+1. **Principal Entity (PE) Registration**: UP State Disaster Management Authority / UPPCB / River Sentinel must be registered on an Indian telecom operator DLT portal (e.g. Airtel IQ, Jio DLT, Smartping).
+2. **Header (Sender ID) Registration**: An approved 6-character alphabetic header (e.g. `UPRSEN`, `RIVSEN`, `VRNSEN`) assigned strictly to Government / Public Utility service routes.
+3. **Content Template Registration**: Every message format must be pre-approved with exact variable markers (`{#var#}`). Messages deviating from registered templates are rejected by carrier SMSCs.
+4. **Explicit Consent & Whitelisting**: Real sensor alerts are transmitted only to individuals with verified phone numbers (`+91` E.164) and an active consent timestamp.
 
 ---
 
-## 3. Environment Configuration (`backend/.env`)
+## 3. SMS Encoding & Segment Calculation
 
-To activate the real external telephony gateway in production, configure the following environment variables:
+The platform implements `calculate_sms_segments(text: str)` to compute character encoding and segment billing:
+
+### 3.1 GSM 7-Bit Default Alphabet
+- **Applicability**: Standard English alerts without special symbols.
+- **Single-Part Message**: Up to **160 characters** fit into 1 SMS segment.
+- **Multi-Part Message**: Messages exceeding 160 characters require a 6-byte User Data Header (UDH) for handset concatenation, reducing each segment payload to **153 characters**.
+- **GSM Extension Characters**: Characters such as `|`, `^`, `{`, `}`, `[`, `]`, `~`, `\` and `€` count as **2 billable characters** each.
+
+### 3.2 Unicode / UCS-2 Encoding (Hindi & Regional Indian Languages)
+- **Applicability**: Hindi Devanagari text (`format_sms_message_hindi`).
+- **Single-Part Message**: Up to **70 characters** (140 bytes) fit into 1 segment.
+- **Multi-Part Message**: Concatenated UCS-2 segments are limited to **67 characters** each.
+- **Devanagari Template Strictness**: River Sentinel 2.0 Hindi alert templates are constrained to $\le 70$ characters to guarantee single-segment transmission and eliminate multi-part delivery failures during flood emergencies.
+
+---
+
+## 4. Canonical Alert Templates
+
+### 4.1 English GSM 7-Bit Template (<= 160 Characters)
+```
+[River Sentinel] Ganga Assi Ghat: Water stage reached CWC DANGER level (71.35m). Consult Varanasi Disaster Control (1077). 2026-11-19 10:00
+```
+- Total length: ~135 characters (1 segment).
+
+### 4.2 Hindi Devanagari UCS-2 Template (<= 70 Characters)
+```
+[रिवर सेंटिनल] गंगा अस्सी घाट: जल स्तर खतरे स्तर (71.35मी) पर। आपदा कक्ष: 1077
+```
+- Total length: 65 characters (1 segment).
+
+---
+
+## 5. Environment Configuration (`backend/.env`)
 
 ```ini
-# Telephony Gateway Settings
-SMS_ENABLED=false                     # Change to 'true' only in verified production deployment
-SMS_PROVIDER=http                    # 'mock' or 'http'
-SMS_API_KEY=your_cdac_or_gateway_api_key_here
-SMS_SENDER_ID=RIVSEN                 # 6-character registered DLT Header (UP-DIPR)
+# Cellular Telephony Gateway Configuration
+SMS_ENABLED=false                           # Keep false in dev/test; set true only with verified DLT credentials
+SMS_PROVIDER=mock                           # 'mock' or 'http'
+SMS_API_KEY=your_cdac_or_gateway_api_key
+SMS_SENDER_ID=RIVSEN                       # 6-character registered DLT Header
 SMS_BASE_URL=https://api.sms-gateway-india.gov.in/v2/sms/send
-```
 
-> [!CAUTION]
-> **Production Deployment Requirement**:
-> In accordance with Telecom Regulatory Authority of India (TRAI) directives, all bulk governmental/transactional SMS traffic originating in India must be registered on a Distributed Ledger Technology (DLT) platform (e.g. Jio / Airtel / Smartping) with approved Headers and Message Templates. Do not set `SMS_ENABLED=true` until your DLT Principal Entity and Template IDs have been vetted.
+# Background Worker & Webhook Security
+WORKER_API_SECRET=your_strong_worker_secret_key
+SMS_WEBHOOK_SECRET=your_carrier_dlr_webhook_secret
+```
 
 ---
 
-## 4. Canonical GSM 160-Character Message Formats
+## 6. Telephony Carrier DLR Webhook Integration
 
-Messages strictly conform to standard 7-bit GSM character lengths to eliminate multi-part concatenation fees and delivery latencies:
+Configure your SMS aggregator to send Delivery Receipt (DLR) status callbacks to:
+`POST https://<your-backend-domain>/api/v1/notifications/callback/sms`
 
-1. **Critical Flood Alert**:
-   ```
-   [RiverSentinel] Ganga Assi Ghat: Water stage reached CWC DANGER level (71.30m). Consult Varanasi Disaster Control (1077). 2026-11-19 10:00
-   ```
-   *(135 characters / 1 SMS segment)*
+Headers:
+`X-SMS-Webhook-Token: <SMS_WEBHOOK_SECRET>`
 
-2. **Water Quality Deviation**:
-   ```
-   [RiverSentinel] Ganga Dashashwamedh: ph (9.20) deviates from CPCB Class B standards. Field team notified. 2026-11-19 10:00
-   ```
-   *(122 characters / 1 SMS segment)*
-
-3. **IoT Node Outage**:
-   ```
-   [RiverSentinel Ops] Hardware node DEV-ESP32-ASSI-01 offline/stale. Technician check required. 2026-11-19 10:00
-   ```
-   *(111 characters / 1 SMS segment)*
+JSON Body:
+```json
+{
+    "provider_message_id": "msg_cwc_20261119_001",
+    "delivery_status": "DELIVERED",
+    "delivered_at": "2026-11-19T10:00:32Z"
+}
+```
+The endpoint transitions delivery status from `accepted` to `delivered`, records `provider_callback_received_at`, and prevents replay attacks.

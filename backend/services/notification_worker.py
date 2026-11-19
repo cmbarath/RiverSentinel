@@ -142,7 +142,6 @@ class NotificationWorker:
                         SET status = 'accepted',
                             provider_message_id = :pmid,
                             accepted_at = :now,
-                            delivered_at = :now,
                             attempt_count = attempt_count + 1,
                             updated_at = :now
                         WHERE id = :id::uuid;

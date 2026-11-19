@@ -1,25 +1,134 @@
 """
-River Sentinel 2.0 - Provider-Independent Telephony & SMS Gateway Service (Phase 5)
+River Sentinel 2.0 - Provider-Independent Telephony & SMS Gateway Service (Phase 5.1 Hardened)
 Provides:
 - Base abstract SMS provider interface.
 - Mock provider for deterministic unit & integration tests.
-- Configurable REST HTTP provider adapter for external gateways (Twilio, CDAC, MSG91).
-- Canonical alert message templating with GSM 160-char compliance and non-emergency disclaimers.
+- Configurable REST HTTP provider adapter for external gateways (CDAC, Twilio, MSG91).
+- Canonical alert message templating with encoding-aware segment calculations (GSM 7-bit & UCS-2).
+- Strict DoT / TRAI National Numbering Plan E.164 verification (+91).
+- Carrier accepted vs terminal delivered lifecycle tracking.
+
+REGULATORY NOTICE (TRAI / DLT COMPLIANCE):
+Under the Telecom Commercial Communications Customer Preference Regulations (TCCCPR, 2018):
+1. Principal Entity (PE) Registration: All enterprise / government senders must hold a verified PE ID with Indian access providers.
+2. Registered Header: All promotional/transactional SMS must use an approved 6-character alphabetic Header (e.g. RIVSEN).
+3. Registered Content Template: Every message sent must match an approved DLT Content Template containing fixed text and {#var#} variables.
+4. Recipient Consent & Preference: Explicit consent timestamping and DND preference verification are statutory prerequisites.
+5. Delivery Receipts: HTTP transmission acceptance does not guarantee terminal delivery; asynchronous DLR webhooks are required.
 """
 
 import os
 import re
+import math
 import uuid
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple, List
 
 SMS_ENABLED = os.getenv('SMS_ENABLED', 'false').lower() in ('true', '1', 'yes')
 SMS_PROVIDER = os.getenv('SMS_PROVIDER', 'mock').lower().strip()
 SMS_API_KEY = os.getenv('SMS_API_KEY', '')
 SMS_SENDER_ID = os.getenv('SMS_SENDER_ID', 'RIVSEN')
 SMS_BASE_URL = os.getenv('SMS_BASE_URL', '')
+SMS_WEBHOOK_SECRET = os.getenv('SMS_WEBHOOK_SECRET', 'rs_sec_dlr_webhook_token_99')
+
+# ----------------------------------------------------------------------------
+# GSM 7-bit Character Set Definitions (3GPP TS 23.038 / ITU-T)
+# ----------------------------------------------------------------------------
+GSM7_BASIC = set(
+    "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿"
+    "abcdefghijklmnopqrstuvwxyzäöñüà"
+)
+
+# Extension table characters - each requires 1 escape byte (counts as 2 GSM chars)
+GSM7_EXTENDED = set("^{}\\[~]|€\f")
+
+
+def calculate_sms_segments(text: str) -> Dict[str, Any]:
+    """
+    Calculate encoding and segment counts for an SMS message.
+    Distinguishes:
+      - GSM 7-bit default alphabet (160 chars single, 153 chars/segment multipart)
+      - GSM extension-table characters (count as 2 characters)
+      - Unicode / UCS-2 messages (70 chars single, 67 chars/segment multipart)
+    """
+    if not text:
+        return {
+            'encoding': 'gsm7',
+            'raw_character_count': 0,
+            'billable_character_count': 0,
+            'segment_count': 0,
+            'max_single_part_chars': 160,
+            'chars_per_multipart_segment': 153,
+            'chars_remaining_in_segment': 160,
+            'is_multipart': False,
+            'non_gsm_characters': []
+        }
+
+    # Check for any non-GSM7 characters
+    non_gsm = [c for c in text if c not in GSM7_BASIC and c not in GSM7_EXTENDED]
+
+    if non_gsm:
+        # UCS-2 / Unicode Encoding (e.g. Hindi Devanagari, emojis, special symbols)
+        encoding = 'ucs2'
+        raw_len = len(text)
+        billable_len = raw_len
+        single_max = 70
+        multi_max = 67
+
+        if raw_len <= single_max:
+            segments = 1
+            remaining = single_max - raw_len
+        else:
+            segments = math.ceil(raw_len / multi_max)
+            remaining = (segments * multi_max) - raw_len
+
+        return {
+            'encoding': encoding,
+            'raw_character_count': raw_len,
+            'character_count': raw_len,
+            'billable_character_count': billable_len,
+            'segment_count': segments,
+            'segments': segments,
+            'max_single_part_chars': single_max,
+            'chars_per_multipart_segment': multi_max,
+            'chars_remaining_in_segment': remaining,
+            'remaining_in_segment': remaining,
+            'is_multipart': segments > 1,
+            'non_gsm_characters': sorted(list(set(non_gsm)))
+        }
+
+    # Standard GSM 7-bit Encoding
+    encoding = 'gsm7'
+    raw_len = len(text)
+    # Calculate billable characters: standard chars = 1, extension chars = 2
+    billable_len = sum(2 if c in GSM7_EXTENDED else 1 for c in text)
+    single_max = 160
+    multi_max = 153
+
+    if billable_len <= single_max:
+        segments = 1
+        remaining = single_max - billable_len
+    else:
+        segments = math.ceil(billable_len / multi_max)
+        remaining = (segments * multi_max) - billable_len
+
+    return {
+        'encoding': encoding,
+        'raw_character_count': raw_len,
+        'character_count': raw_len,
+        'billable_character_count': billable_len,
+        'segment_count': segments,
+        'segments': segments,
+        'max_single_part_chars': single_max,
+        'chars_per_multipart_segment': multi_max,
+        'chars_remaining_in_segment': remaining,
+        'remaining_in_segment': remaining,
+        'is_multipart': segments > 1,
+        'non_gsm_characters': []
+    }
 
 
 class BaseSMSProvider(ABC):
@@ -86,7 +195,7 @@ class HTTPGatewaySMSProvider(BaseSMSProvider):
     def __init__(self, api_key: str, sender_id: str, base_url: str):
         self.api_key = api_key
         self.sender_id = sender_id
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip('/') if base_url else ''
 
     def validate_configuration(self) -> bool:
         return bool(self.api_key and self.base_url)
@@ -101,7 +210,6 @@ class HTTPGatewaySMSProvider(BaseSMSProvider):
                 'error_message': 'HTTP SMS Gateway credentials or base URL missing.'
             }
 
-        # Simulated REST post structure - ready for production URL hook
         import requests
         try:
             headers = {
@@ -119,7 +227,7 @@ class HTTPGatewaySMSProvider(BaseSMSProvider):
                 return {
                     'success': True,
                     'provider_message_id': data.get('id') or data.get('message_id') or str(uuid.uuid4()),
-                    'status': 'accepted',
+                    'status': 'accepted',  # Accepted by carrier, NOT terminal delivered yet!
                     'error_code': None,
                     'error_message': None
                 }
@@ -157,24 +265,54 @@ def get_sms_provider() -> BaseSMSProvider:
 def format_sms_message(category: str, severity: str, station_name: str,
                        param: str, value: Any, unit: str, timestamp_str: str) -> str:
     """
-    Format concise alert messages conforming to standard GSM 7-bit lengths (<= 160 chars).
-    Crucially includes disclaimer directing citizens to official authorities (CWC / UPPCB).
+    Format concise English alert message conforming to GSM 7-bit single-segment limits (<= 160 chars).
+    Crucially includes emergency helpline disclaimer (1077).
     """
     ts = timestamp_str[:16].replace('T', ' ') if 'T' in timestamp_str else timestamp_str
 
     if category == 'FLOOD':
         stage_name = "DANGER" if severity == 'CRITICAL' else "WARNING"
-        msg = f"[RiverSentinel] Ganga {station_name}: Water stage reached CWC {stage_name} level ({value}{unit}). Consult Varanasi Disaster Control (1077). {ts}"
+        msg = f"[RiverSentinel] Ganga {station_name}: Water reached CWC {stage_name} level ({value}{unit}). Varanasi Control: 1077. {ts}"
     elif category == 'WATER_QUALITY':
-        msg = f"[RiverSentinel] Ganga {station_name}: {param} ({value}{unit}) deviates from CPCB Class B standards. Field team notified. {ts}"
+        msg = f"[RiverSentinel] Ganga {station_name}: {param} ({value}{unit}) deviates from statutory CPCB Class B standard. Field team notified. {ts}"
     elif category == 'DEVICE_HEALTH':
-        msg = f"[RiverSentinel Ops] Hardware node {station_name} offline/stale. Technician check required. {ts}"
+        msg = f"[RiverSentinel Ops] Hardware node {station_name} offline. Technician check required. {ts}"
     elif category == 'POLLUTION_REPORT':
         msg = f"[RiverSentinel Ops] Citizen report #{value} logged at {station_name}. UPPCB review pending. {ts}"
     else:
         msg = f"[RiverSentinel Alert] {severity}: {station_name} - {param}: {value}{unit}. {ts}"
 
-    return msg[:160]  # Hard truncate to 1 SMS segment to guarantee no multi-part overflow
+    # Ensure single segment (<= 160 GSM chars)
+    seg_info = calculate_sms_segments(msg)
+    if seg_info['billable_character_count'] > 160:
+        msg = msg[:157] + "..."
+
+    return msg
+
+
+def format_sms_message_hindi(category: str, severity: str, station_name: str,
+                             param: str, value: Any, unit: str, timestamp_str: Optional[str] = None) -> str:
+    """
+    Format concise Hindi Unicode alert message conforming to UCS-2 single-segment limits (<= 70 chars).
+    Uses Devanagari script.
+    """
+    ts_val = timestamp_str or datetime.now().strftime('%Y-%m-%d')
+    ts = ts_val[:10] if len(ts_val) >= 10 else ts_val
+
+    if category == 'FLOOD':
+        stage_name = "खतरे" if severity == 'CRITICAL' else "चेतावनी"
+        # e.g. [रिवर सेंटिनल] गंगा अस्सी: जल स्तर खतरे के निशान (71.3m) पर। हेल्पलाइन: 1077
+        msg = f"[रिवर सेंटिनल] गंगा {station_name}: जल स्तर {stage_name} स्तर ({value}{unit}) पर। आपदा कक्ष: 1077"
+    elif category == 'WATER_QUALITY':
+        msg = f"[रिवर सेंटिनल] गंगा {station_name}: {param} स्तर में विचलन ({value}{unit})। UPPCB सूचित।"
+    else:
+        msg = f"[रिवर सेंटिनल चेतावनी] {station_name}: {param} ({value}{unit}) {ts}"
+
+    # Ensure single segment (<= 70 UCS-2 chars)
+    if len(msg) > 70:
+        msg = msg[:67] + "..."
+
+    return msg
 
 
 def validate_indian_phone(phone: str) -> Optional[str]:

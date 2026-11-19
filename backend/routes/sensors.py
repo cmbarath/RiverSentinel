@@ -453,18 +453,35 @@ def get_citizen_health_status():
     ph   = _validated_sensor(reading, 'ph', 7.4)
     turb = _validated_sensor(reading, 'turbidity', 15.0)
     do_v = _validated_sensor(reading, 'do', 6.8)
-    bod  = _validated_sensor(reading, 'bod', 12.0)
+    bod  = reading.get('bod')
+    total_coliform = reading.get('total_coliform')
 
-    bathing_safe = (6.5 <= ph <= 8.5) and (turb <= 30.0) and (do_v >= 5.0) and (bod <= 20.0)
-    drinking_safe = (6.5 <= ph <= 8.5) and (turb <= 5.0) and (do_v >= 6.0) and (bod <= 3.0)
+    # Scientific CPCB Class B Assessment (pH, DO, BOD, Total Coliform)
+    # Turbidity is handled separately as an operational screening parameter.
+    cpcb_eval = AlertService.evaluate_cpcb_class_b_compliance(
+        ph=ph,
+        do_v=do_v,
+        bod=float(bod) if bod is not None else None,
+        total_coliform=float(total_coliform) if total_coliform is not None else None
+    )
+
+    compliance_status = cpcb_eval['compliance_status']
+    bathing_safe = (compliance_status == 'compliant_for_measured_parameters')
+    drinking_safe = False  # Raw river water requires conventional treatment per BIS IS 10500:2012
+
+    turb_investigation_threshold = 100.0
+    turb_alert = (turb is not None and turb > turb_investigation_threshold)
 
     alerts = []
-    if turb > 50.0:
-        alerts.append("High turbidity: River water is cloudy; avoid direct contact.")
-    if do_v < 4.0:
-        alerts.append("Low dissolved oxygen: Aquatic ecosystem under distress.")
-    if ph < 6.5 or ph > 8.5:
-        alerts.append(f"Abnormal pH ({ph}): Skin irritation possible.")
+    if turb_alert:
+        alerts.append(f"Operational Screening: High Turbidity ({turb} NTU) exceeds {turb_investigation_threshold} NTU investigation threshold.")
+    elif turb is not None and turb > 30.0:
+        alerts.append("Elevated turbidity: River water is cloudy due to suspended sediment.")
+
+    if do_v is not None and do_v < 5.0:
+        alerts.append(f"Low Dissolved Oxygen ({do_v} mg/L): Below CPCB Class B minimum (5.0 mg/L).")
+    if ph is not None and (ph < 6.5 or ph > 8.5):
+        alerts.append(f"Abnormal pH ({ph}): Outside CPCB Class B range (6.5 - 8.5).")
 
     return jsonify({
         'status': 'success',
@@ -472,6 +489,17 @@ def get_citizen_health_status():
         'evaluated_at': reading.get('created_at') or time.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'bathing_safe': bathing_safe,
         'drinking_safe': drinking_safe,
+        'compliance_status': compliance_status,
+        'assessment_type': cpcb_eval['assessment_type'],
+        'cpcb_class_b': cpcb_eval,
+        'operational_screening': {
+            'parameter': 'turbidity',
+            'value_ntu': turb,
+            'investigation_threshold_ntu': turb_investigation_threshold,
+            'is_cpcb_statutory': False,
+            'source_reference': 'Project Investigation Guideline v2.0',
+            'status': 'INVESTIGATION_RECOMMENDED' if turb_alert else 'NORMAL'
+        },
         'water_quality_summary': 'FAIR' if bathing_safe else 'POOR',
         'active_alerts': alerts,
         'parameters': {
@@ -480,5 +508,9 @@ def get_citizen_health_status():
             'dissolved_oxygen_mg_l': do_v,
             'bod_mg_l': bod
         },
-        'disclaimer': 'Citizen advisory screening only; derived from automated sensors, not statutory microbiological lab analysis.'
+        'disclaimer': (
+            "Screening based on in-situ electronic telemetry. Statutory CPCB Class B compliance requires "
+            "laboratory analysis of BOD (<= 3.0 mg/L) and Total Coliform (<= 500 MPN/100 mL). "
+            "Turbidity is evaluated against an operational screening guideline (100 NTU), not statutory CPCB Class B."
+        )
     })

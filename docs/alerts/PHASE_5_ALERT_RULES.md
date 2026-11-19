@@ -1,65 +1,55 @@
-# River Sentinel 2.0 — Standard Alert Rules & Regulatory Criteria
+# River Sentinel 2.0 — Standard Alert Rules & Regulatory Criteria (Phase 5.1 Hardened)
 
-## 1. Seeded Statutory Alert Rules
+## 1. Statutory vs. Operational Regulatory Rules
 
-The database comes pre-configured with 7 official regulatory alert rules:
+River Sentinel 2.0 strictly distinguishes statutory environmental benchmarks from internal operational riparian screening rules.
 
-| Rule Code | Category | Parameter | Condition | Severity | Regulatory Origin | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `RULE-CWC-FLOOD-WARN` | `FLOOD` | `water_level` | `>= 70.26 m` | `HIGH` | CWC Varanasi Datum | Water level reaches or exceeds CWC Warning Stage (70.26m MSL). Low-lying steps inundated. |
-| `RULE-CWC-FLOOD-DANGER` | `FLOOD` | `water_level` | `>= 71.26 m` | `CRITICAL` | CWC Varanasi Datum | Water level reaches or exceeds CWC Danger Stage (71.26m MSL). Precautionary evacuation required. |
-| `RULE-CPCB-PH-RANGE` | `WATER_QUALITY` | `ph` | `< 6.5 OR > 8.5` | `HIGH` | CPCB Class B (Bathing) | Surface water pH outside safe statutory range (6.5 - 8.5). Chemical or acidic discharge risk. |
-| `RULE-CPCB-DO-MIN` | `WATER_QUALITY` | `do` | `< 5.0 mg/L` | `HIGH` | CPCB Class B (Bathing) | Dissolved Oxygen critically depleted (< 5.0 mg/L). Risk to aquatic biodiversity. |
-| `RULE-TURB-HIGH` | `WATER_QUALITY` | `turbidity` | `> 100 NTU` | `MEDIUM` | CPCB/BIS IS 10500 | Excessive sediment load or sewage effluent discharge detected. |
-| `RULE-DEV-OFFLINE` | `DEVICE_HEALTH` | `heartbeat_stale_seconds` | `> 900 s` | `HIGH` | IoT Edge Reliability Spec | Active ESP32 node has not transmitted telemetry in 15 minutes. Check power or LoRa/WiFi gateway. |
-| `RULE-POLLUTION-NEW` | `POLLUTION_REPORT` | `status` | `eq 'PENDING'` | `HIGH` | Citizen Watchdog Workflow | New citizen pollution report filed. UPPCB field triage required. |
+| Rule Code | Category | Parameter | Condition | Severity | Statutory? | Origin / Version Metadata | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `RULE-CWC-FLOOD-WARN` | `FLOOD` | `water_level` | `>= 70.26 m` | `HIGH` | **Yes** | CWC Varanasi Reference Datum | Water level reaches CWC Warning Stage (70.26m MSL). Low-lying steps inundated. |
+| `RULE-CWC-FLOOD-DANGER` | `FLOOD` | `water_level` | `>= 71.26 m` | `CRITICAL` | **Yes** | CWC Varanasi Reference Datum | Water level reaches CWC Danger Stage (71.26m MSL). Precautionary evacuation required. |
+| `RULE-CPCB-PH-RANGE` | `WATER_QUALITY` | `ph` | `< 6.5 OR > 8.5` | `HIGH` | **Yes** | CPCB Class B (Outdoor Bathing) | Surface water pH outside safe statutory range (6.5 - 8.5). Chemical or acidic discharge risk. |
+| `RULE-CPCB-DO-MIN` | `WATER_QUALITY` | `do` | `< 5.0 mg/L` | `HIGH` | **Yes** | CPCB Class B (Outdoor Bathing) | Dissolved Oxygen critically depleted (< 5.0 mg/L). Risk to human immersion & aquatic life. |
+| `RULE-TURB-HIGH` | `OPERATIONAL_SCREENING` | `turbidity` | `> 100.0 NTU` | `MEDIUM` | **No** | Project Investigation Guideline v2.0 | Non-statutory operational investigation threshold for suspended solids/effluent plume. |
+| `RULE-DEV-OFFLINE` | `DEVICE_HEALTH` | `heartbeat_stale_seconds` | `> 900 s` | `HIGH` | Internal | IoT Edge Reliability Spec v1.0 | Active ESP32 node has not transmitted telemetry in 15 minutes. Check LoRa/WiFi/power. |
+| `RULE-POLLUTION-NEW` | `POLLUTION_REPORT` | `status` | `eq 'PENDING'` | `HIGH` | Citizen | Citizen Watchdog Workflow | New citizen pollution report filed. UPPCB field triage required. |
 
 ---
 
-## 2. Rule Evaluation Semantics
+## 2. Scientific Evaluation Semantics
 
-### 2.1 CWC Hydrological Flood Screening
-- Flood thresholds are GTS MSL (Mean Sea Level) elevations.
-- Evaluation occurs **only** when `station.cwc_reference_gauge_id` is present.
-- A water level `>= 71.26m` creates or escalates an existing alert to `CRITICAL`.
-- A water level `>= 70.26m` and `< 71.26m` creates or maintains a `HIGH` alert.
-- Hysteresis recovery occurs when water level recedes below `warning_threshold - 0.15m` (e.g. `<= 70.11m`).
+### 2.1 CPCB Class B Primary Water Quality Criteria for Outdoor Bathing
+Official statutory CPCB Class B criteria require all four parameters:
+1. **pH**: 6.5 to 8.5
+2. **Dissolved Oxygen (DO)**: $\ge 5.0\text{ mg/L}$
+3. **Biochemical Oxygen Demand (BOD 5-day 20°C)**: $\le 3.0\text{ mg/L}$
+4. **Total Coliform Organisms**: $\le 500\text{ MPN/100 mL}$
 
-### 2.2 CPCB Class B Water Quality Screening
-- **pH**: Values `< 6.5` indicate industrial acidic runoff or organic decomposition; values `> 8.5` indicate alkaline industrial wastewater or toxic algae blooms.
-  - Recovery condition: `6.6 <= ph <= 8.4`.
-- **Dissolved Oxygen (DO)**: Values `< 5.0 mg/L` violate the minimum bathing requirement. Severe hypoxia (`< 2.0 mg/L`) is escalated in alert descriptions.
-  - Recovery condition: `do >= 5.2 mg/L`.
-- **Turbidity**: Values `> 100 NTU` exceed riparian clarity standards.
-  - Recovery condition: `turbidity <= 90 NTU`.
+**In-Situ Hardware Screening Limitation:**
+Real-time electronic edge nodes (ESP32 probes) measure physical and chemical indicators (pH, DO, temperature, conductivity, turbidity). Continuous electronic probes cannot perform 5-day microbiological incubation (BOD) or bacteriological culture (Total Coliform).
+Therefore, real-time telemetry assessments are classified as:
+- `compliant_for_measured_parameters`: All in-situ electronic parameters (pH, DO) are within limits, with explicit `partial_assessment` disclaimer indicating laboratory microbiological analysis is required for statutory certification.
+- `non_compliant_for_measured_parameters`: At least one in-situ measured parameter violates limits.
+- `insufficient_data`: Neither pH nor DO is available.
 
-### 2.3 Hardware Health Screening
-- Applies **strictly** to devices with lifecycle state `active`.
-- Provisioned devices awaiting initial deployment (`status == 'provisioned'`) are **not** flagged as offline outages.
-- If an active device with prior transmissions exceeds `900` seconds since `last_seen_at`, `RULE-DEV-OFFLINE` triggers.
-- Once telemetry is received within `900` seconds, the offline alert is resolved automatically.
+### 2.2 Operational Turbidity Screening (`RULE-TURB-HIGH`)
+- **Scientific Clarification**: Turbidity is **not** a statutory CPCB Class B criterion for outdoor bathing. Turbidity is governed separately as an operational riparian clarity guideline (100.0 NTU trigger, 85.0 NTU recovery).
+- **Category**: `OPERATIONAL_SCREENING` (distinct from statutory `WATER_QUALITY`).
+- **Rule Metadata**: `is_cpcb_statutory = FALSE`, `source_reference = 'Project Investigation Guideline v2.0'`, `rule_version = 2`.
+- **Hysteresis Recovery**: Recovery is evaluated at `<= 85.0 NTU` to prevent alert chattering during transient silt surges.
+
+### 2.3 Granular Alert Deduplication Keys
+To prevent cross-parameter collision (such as high turbidity overwriting low DO), all deduplication keys are fully qualified:
+- **CWC Flood Stage**: `RULE-CWC-FLOOD:{station_id}:water_level`
+- **CPCB pH Range**: `RULE-CPCB-PH-RANGE:{station_id}:ph`
+- **CPCB Minimum DO**: `RULE-CPCB-DO-MIN:{station_id}:do`
+- **Turbidity Screening**: `RULE-TURB-HIGH:{station_id}:turbidity`
+- **Device Connectivity**: `RULE-DEV-OFFLINE:{device_id}`
+- **Citizen Pollution Report**: `RULE-POLLUTION-NEW:{report_id}`
 
 ---
 
 ## 3. Dynamic Rule Management (Admin API)
 
-Authority Administrators can create or update rules via the versioned API:
-
-```http
-POST /api/v1/alerts/rules
-Authorization: Bearer <authority_jwt>
-Content-Type: application/json
-
-{
-    "rule_code": "RULE-CUSTOM-TEMP-MAX",
-    "name": "High Water Temperature Warning",
-    "category": "WATER_QUALITY",
-    "parameter": "temperature",
-    "operator": ">",
-    "threshold_value": 35.0,
-    "threshold_unit": "°C",
-    "severity": "MEDIUM",
-    "cooldown_seconds": 1800,
-    "enabled": true
-}
-```
+Authority Administrators can inspect, update, or create rules via `/api/v1/alerts/rules`.
+All rule modifications retain `rule_version` tracking and log lifecycle transitions in `alert_events`.

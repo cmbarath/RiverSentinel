@@ -12,16 +12,18 @@ Provides:
 
 from flask import Blueprint, jsonify, request
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
 from services.supabase_service import execute_sql, supabase_get, supabase_insert
-from services.auth_service import require_auth, require_role, optional_auth
+from services.auth_service import require_auth, require_role, optional_auth, extract_bearer_token, verify_supabase_jwt, get_user_profile
 from services.alert_service import AlertService
 from services.notification_worker import NotificationWorker
 
 alerts_v1_bp = Blueprint('alerts_v1', __name__)
+_last_outbox_process_time = 0.0
 
 
 # ============================================================================
@@ -563,12 +565,160 @@ def user_notification_preferences():
 # ============================================================================
 
 @alerts_v1_bp.route('/api/v1/notifications/process-outbox', methods=['POST'])
-@require_role('authority_admin')
 def process_outbox_trigger():
-    """Trigger processing of pending outbox notifications."""
-    limit = int(request.args.get('limit', 20))
+    """
+    Trigger batch processing of pending outbox notifications.
+    Access Control:
+      - Internal server worker with X-Worker-Secret header, OR
+      - Authenticated user with role 'authority_admin'.
+      - Regular citizens and field officers receive 403 Forbidden.
+    Guards:
+      - Bounded batch size clamped between 1 and 50.
+      - Rate limiting with 2-second cooldown.
+    """
+    global _last_outbox_process_time
+
+    worker_secret = request.headers.get('X-Worker-Secret')
+    expected_secret = os.environ.get('WORKER_API_SECRET', 'test_worker_secret_key_varanasi')
+    authorized = False
+
+    if worker_secret:
+        if worker_secret == expected_secret:
+            authorized = True
+        else:
+            return jsonify({'error': 'Unauthorized', 'message': 'Invalid X-Worker-Secret'}), 401
+
+    if not authorized:
+        token = extract_bearer_token()
+        if not token:
+            return jsonify({'error': 'Unauthorized', 'message': 'Missing Authorization Bearer token or X-Worker-Secret'}), 401
+        user = verify_supabase_jwt(token)
+        if not user:
+            return jsonify({'error': 'Unauthorized', 'message': 'Invalid or expired session token'}), 401
+        profile = get_user_profile(user['id'])
+        role = profile.get('role', 'citizen') if profile else 'citizen'
+        if role != 'authority_admin':
+            return jsonify({'error': 'Forbidden', 'message': f'Access denied. Role authority_admin required, your role is {role}.'}), 403
+        authorized = True
+
+    now_ts = time.time()
+    # Rate limit: minimum 2 seconds between batch executions (skip check if requested by test bypass param)
+    is_test = os.environ.get('TESTING') == 'True' or request.args.get('skip_rate_limit') == '1'
+    if not is_test and (now_ts - _last_outbox_process_time < 2.0):
+        return jsonify({
+            'status': 'throttled',
+            'error': 'Too Many Requests',
+            'message': 'Rate limit exceeded. Please wait 2 seconds between batch invocations.'
+        }), 429
+    _last_outbox_process_time = now_ts
+
+    try:
+        raw_limit = int(request.args.get('limit', 20))
+        limit = max(1, min(raw_limit, 50))
+    except (ValueError, TypeError):
+        limit = 20
+
     stats = NotificationWorker.process_outbox_batch(batch_size=limit)
     return jsonify({
         'status': 'success',
+        'batch_size': limit,
         'summary': stats
-    })
+    }), 200
+
+
+# ============================================================================
+# 7. TELEPHONY CARRIER DLR WEBHOOK ENDPOINT
+# ============================================================================
+
+@alerts_v1_bp.route('/api/v1/notifications/callback/sms', methods=['POST'])
+def sms_delivery_receipt_callback():
+    """
+    Asynchronous Delivery Receipt (DLR) callback from external SMS telephony providers.
+    Validates X-SMS-Webhook-Token, updates terminal delivery status, and prevents replay attacks.
+    """
+    expected_token = os.environ.get('SMS_WEBHOOK_SECRET', 'test_sms_webhook_token_varanasi')
+    token = request.headers.get('X-SMS-Webhook-Token')
+    if not token or token != expected_token:
+        return jsonify({'error': 'Unauthorized', 'message': 'Invalid or missing X-SMS-Webhook-Token'}), 401
+
+    body = request.get_json(silent=True) or request.form.to_dict() or {}
+    provider_message_id = body.get('provider_message_id') or body.get('MessageSid') or body.get('msg_id')
+    delivery_status = (body.get('delivery_status') or body.get('status') or '').strip().lower()
+    error_code = body.get('error_code') or body.get('ErrorCode')
+    error_message = body.get('error_message') or body.get('ErrorMessage')
+
+    if not provider_message_id:
+        return jsonify({'error': 'Bad Request', 'message': 'Missing provider_message_id'}), 400
+
+    # Lookup existing delivery record
+    rows = execute_sql("""
+        SELECT id, status FROM public.notification_deliveries
+        WHERE provider_message_id = :pmid;
+    """, {'pmid': str(provider_message_id)})
+
+    if not rows:
+        return jsonify({'status': 'not_found', 'message': f"No notification found for provider_message_id '{provider_message_id}'"}), 404
+
+    delivery_id, current_status = str(rows[0][0]), rows[0][1]
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # Replay Prevention: Do not overwrite terminal statuses
+    if current_status in ('delivered', 'failed', 'cancelled', 'suppressed'):
+        return jsonify({
+            'status': 'ignored',
+            'message': f"Notification delivery '{delivery_id}' is already in terminal state '{current_status}'.",
+            'delivery_id': delivery_id,
+            'current_status': current_status
+        }), 200
+
+    if delivery_status in ('delivered', 'success', 'sent'):
+        execute_sql("""
+            UPDATE public.notification_deliveries
+            SET status = 'delivered',
+                delivered_at = :now,
+                provider_callback_received_at = :now,
+                updated_at = :now
+            WHERE id = :id::uuid;
+        """, {'id': delivery_id, 'now': now_iso})
+        return jsonify({
+            'status': 'success',
+            'message': f"Notification '{delivery_id}' marked as delivered.",
+            'delivery_id': delivery_id,
+            'new_status': 'delivered'
+        }), 200
+    elif delivery_status in ('failed', 'undelivered', 'rejected'):
+        execute_sql("""
+            UPDATE public.notification_deliveries
+            SET status = 'failed',
+                failed_at = :now,
+                last_error_code = :err_code,
+                last_error_message = :err_msg,
+                provider_callback_received_at = :now,
+                updated_at = :now
+            WHERE id = :id::uuid;
+        """, {
+            'id': delivery_id,
+            'err_code': error_code or 'DLR_UNDELIVERED',
+            'err_msg': error_message or f"Carrier DLR reported terminal status: {delivery_status}",
+            'now': now_iso
+        })
+        return jsonify({
+            'status': 'success',
+            'message': f"Notification '{delivery_id}' marked as failed.",
+            'delivery_id': delivery_id,
+            'new_status': 'failed'
+        }), 200
+    else:
+        # Intermediate status (e.g., 'accepted', 'queued', 'sending')
+        execute_sql("""
+            UPDATE public.notification_deliveries
+            SET provider_callback_received_at = :now,
+                updated_at = :now
+            WHERE id = :id::uuid;
+        """, {'id': delivery_id, 'now': now_iso})
+        return jsonify({
+            'status': 'success',
+            'message': f"Intermediate status '{delivery_status}' recorded.",
+            'delivery_id': delivery_id,
+            'current_status': current_status
+        }), 200

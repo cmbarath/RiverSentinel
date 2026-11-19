@@ -37,11 +37,19 @@ interface SafetyEvaluationResponse {
     bathing_water_screening: {
         cpcb_class: string;
         suitability: 'SUITABLE' | 'UNSUITABLE' | 'INSUFFICIENT_TELEMETRY';
+        verdict?: string;
+        compliance_status?: string;
+        assessment_type?: 'full_assessment' | 'partial_assessment' | 'insufficient_data';
+        full_class_b_declared?: boolean;
         criteria: {
             ph: { value: number | null; requirement: string; passed: boolean };
             dissolved_oxygen: { value: number | null; requirement: string; passed: boolean };
+            bod?: { value: number | null; required?: string; passed?: boolean; measured?: boolean };
+            total_coliform?: { value: number | null; required?: string; passed?: boolean; measured?: boolean };
         };
+        missing_criteria?: string[];
         notes: string;
+        disclaimer?: string;
     };
     drinking_water_screening: {
         standard: string;
@@ -262,15 +270,24 @@ export default function SafetyChecker() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                         {/* 1. Religious & Recreational Bathing Safety (CPCB Class B) */}
                         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: `4px solid ${evaluation.bathing_water_screening.suitability === 'SUITABLE' ? '#10b981' : '#ef4444'}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <div>
                                     <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>
                                         Religious Bathing Safety 🏊
                                     </h3>
                                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>CPCB Class B Primary Water Criteria</div>
+                                    {evaluation.bathing_water_screening.assessment_type === 'partial_assessment' && (
+                                        <div style={{ marginTop: '0.25rem' }}>
+                                            <span className="badge badge-orange" style={{ fontSize: '0.68rem', padding: '0.15rem 0.5rem' }}>
+                                                PARTIAL ASSESSMENT (In-Situ Parameters Only)
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
-                                <span className={`badge ${evaluation.bathing_water_screening.suitability === 'SUITABLE' ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.85rem', padding: '0.35rem 0.75rem' }}>
-                                    {evaluation.bathing_water_screening.suitability}
+                                <span className={`badge ${evaluation.bathing_water_screening.suitability === 'SUITABLE' ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem', textAlign: 'right' }}>
+                                    {evaluation.bathing_water_screening.compliance_status ? 
+                                        evaluation.bathing_water_screening.compliance_status.replace(/_/g, ' ').toUpperCase() : 
+                                        evaluation.bathing_water_screening.suitability}
                                 </span>
                             </div>
 
@@ -296,12 +313,12 @@ export default function SafetyChecker() {
                                 </div>
 
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Turbidity</div>
-                                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f172a' }}>
-                                        {raw?.turbidity !== null ? `${raw?.turbidity.toFixed(0)} NTU` : '—'}
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>BOD / Coliform</div>
+                                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                        Lab Analysis
                                     </div>
-                                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
-                                        {raw?.turbidity && raw.turbidity < 10 ? 'Clear Water' : 'Moderate Silt'}
+                                    <div style={{ fontSize: '0.7rem', color: '#b45309' }}>
+                                        Incubation Needed
                                     </div>
                                 </div>
                             </div>
@@ -309,6 +326,21 @@ export default function SafetyChecker() {
                             <p style={{ margin: 0, fontSize: '0.85rem', color: '#334155', lineHeight: 1.4 }}>
                                 {evaluation.bathing_water_screening.notes}
                             </p>
+
+                            {/* Operational Riparian Screening Box (Turbidity Guideline) */}
+                            <div style={{ padding: '0.65rem', borderRadius: '0.375rem', background: '#f1f5f9', borderLeft: '3px solid #64748b' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
+                                        Operational Riparian Screening (Turbidity)
+                                    </span>
+                                    <span className={`badge ${raw?.turbidity && raw.turbidity > 100 ? 'badge-red' : 'badge-blue'}`} style={{ fontSize: '0.7rem' }}>
+                                        {raw?.turbidity && raw.turbidity > 100 ? 'INVESTIGATION RECOMMENDED' : 'NORMAL'}
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.25rem' }}>
+                                    Current: <strong>{raw?.turbidity !== null ? `${raw?.turbidity.toFixed(1)} NTU` : '—'}</strong> | Threshold: <strong>100.0 NTU</strong> (Project Investigation Guideline v2.0 - Non-statutory operational screening)
+                                </div>
+                            </div>
                         </div>
 
                         {/* 2. Drinking Water Suitability Screening (BIS IS 10500:2012) */}

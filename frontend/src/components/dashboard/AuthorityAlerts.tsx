@@ -53,6 +53,9 @@ interface AlertRule {
     severity: string;
     enabled: boolean;
     cooldown_seconds: number;
+    is_cpcb_statutory?: boolean;
+    source_reference?: string;
+    rule_version?: number;
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
@@ -393,6 +396,7 @@ export default function AuthorityAlerts() {
                             <option value="ALL">All Categories</option>
                             <option value="FLOOD">CWC Flood</option>
                             <option value="WATER_QUALITY">CPCB Water Quality</option>
+                            <option value="OPERATIONAL_SCREENING">Operational Screening</option>
                             <option value="DEVICE_HEALTH">IoT Node Health</option>
                             <option value="POLLUTION_REPORT">Citizen Pollution Reports</option>
                         </select>
@@ -430,8 +434,22 @@ export default function AuthorityAlerts() {
                                 {rules.map((rule) => (
                                     <tr key={rule.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                                         <td style={{ padding: "0.75rem", fontFamily: "monospace", fontWeight: 700, color: "#1e293b" }}>{rule.rule_code}</td>
-                                        <td style={{ padding: "0.75rem", fontWeight: 600 }}>{rule.name}</td>
-                                        <td style={{ padding: "0.75rem" }}>{getCategoryBadge(rule.category)}</td>
+                                        <td style={{ padding: "0.75rem" }}>
+                                            <div style={{ fontWeight: 600 }}>{rule.name}</div>
+                                            {rule.source_reference && (
+                                                <div style={{ fontSize: "0.7rem", color: "#64748b" }}>{rule.source_reference}</div>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: "0.75rem" }}>
+                                            {getCategoryBadge(rule.category)}
+                                            {rule.is_cpcb_statutory === false && (
+                                                <div style={{ marginTop: "0.2rem" }}>
+                                                    <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.35rem", borderRadius: "0.25rem", background: "#fef3c7", color: "#92400e", fontWeight: 600 }}>
+                                                        Non-Statutory
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </td>
                                         <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
                                             {rule.parameter} {rule.operator} {rule.threshold_value} {rule.threshold_unit}
                                         </td>
