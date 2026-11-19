@@ -17,13 +17,13 @@ if backend_dir not in sys.path:
 
 from app import app
 from services.supabase_service import supabase_get, supabase_insert, supabase_update
-from services.device_auth_service import hash_device_token
+from services.device_auth_service import hash_device_token, generate_device_token
 
 TEST_DEVICE_CODE = "DEV-TEST-ESP32-99"
-TEST_DEVICE_TOKEN = "rs_dev_test_credential_secret_998877"
+TEST_DEVICE_TOKEN = "rs_dev_" + "a" * 48
 
 REVOKED_DEVICE_CODE = "DEV-TEST-REVOKED-88"
-REVOKED_DEVICE_TOKEN = "rs_dev_revoked_secret_887766"
+REVOKED_DEVICE_TOKEN = "rs_dev_" + "b" * 48
 
 
 class Phase3AIoTTelemetryTests(unittest.TestCase):
@@ -185,8 +185,8 @@ class Phase3AIoTTelemetryTests(unittest.TestCase):
         self.assertEqual(float(r.get('ph')), 7.6)
         self.assertIsNone(r.get('bod'), "BOD must be NULL for physical sensor readings")
 
-    def test_06_duplicate_message_rejected_with_409_conflict(self):
-        """Scenario 6: Sending identical message_id twice returns 409 Conflict."""
+    def test_06_duplicate_message_acknowledged_with_200_ok(self):
+        """Scenario 6: Sending identical message_id twice returns 200 OK duplicate acknowledged."""
         fixed_msg_id = str(uuid.uuid4())
         payload = {
             'schema_version': '2.0',
@@ -202,8 +202,10 @@ class Phase3AIoTTelemetryTests(unittest.TestCase):
 
         # Duplicate send
         res2 = self.client.post('/api/v1/telemetry/ingest', headers=self._headers(), json=payload)
-        self.assertEqual(res2.status_code, 409)
-        self.assertEqual(res2.get_json().get('error_code'), 'DUPLICATE_MESSAGE')
+        self.assertEqual(res2.status_code, 200)
+        data2 = res2.get_json()
+        self.assertEqual(data2.get('status'), 'success')
+        self.assertTrue(data2.get('duplicate'))
 
     # ========================================================================
     # Scenario 7 - 10: Sensor Physical Limits & Explicit Quality States
@@ -351,7 +353,8 @@ class Phase3AIoTTelemetryTests(unittest.TestCase):
 
         # Retry
         res2 = self.client.post('/api/v1/telemetry/ingest', headers=self._headers(), json=payload)
-        self.assertEqual(res2.status_code, 409)
+        self.assertEqual(res2.status_code, 200)
+        self.assertTrue(res2.get_json().get('duplicate'))
 
         # Verify only 1 row exists in DB
         rows = supabase_get('sensor_readings', filters={'device_message_id': f'eq.{fixed_id}'})

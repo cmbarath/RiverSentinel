@@ -15,10 +15,11 @@ private:
     bool _useTls;
     const char* _endpoint;
     const DeviceAuth& _auth;
+    const char* _caCert;
 
 public:
-    TelemetryClient(const char* host, int port, bool useTls, const char* endpoint, const DeviceAuth& auth)
-        : _host(host), _port(port), _useTls(useTls), _endpoint(endpoint), _auth(auth) {}
+    TelemetryClient(const char* host, int port, bool useTls, const char* endpoint, const DeviceAuth& auth, const char* caCert = nullptr)
+        : _host(host), _port(port), _useTls(useTls), _endpoint(endpoint), _auth(auth), _caCert(caCert) {}
 
     String formatPayload(
         const String& messageId,
@@ -94,8 +95,22 @@ public:
         WiFiClient plainClient;
 
         if (_useTls) {
-            // Note: In physical production, load the official ISRG Root X1 / CA cert into secureClient.setCACert()
-            // Do NOT use setInsecure() in production deployment
+            // Strict Certificate Validation:
+            // 1. Verify NTP clock is synchronized prior to TLS handshake.
+            time_t now = time(nullptr);
+            if (now < 1700000000) { // Timestamp before Nov 2023 indicates uninitialized RTC
+                Serial.println(F("[TLS] ❌ Error: NTP time not synchronized. Refusing TLS connection without valid clock to prevent accepting expired or forged certificates."));
+                return -2;
+            }
+
+            // 2. Set trusted root CA certificate (NEVER use setInsecure)
+            if (_caCert != nullptr && strlen(_caCert) > 0) {
+                secureClient.setCACert(_caCert);
+            } else {
+                Serial.println(F("[TLS] ❌ Error: No Root CA certificate configured for HTTPS validation. Rejecting insecure connection."));
+                return -3;
+            }
+
             secureClient.setTimeout(8);
             client = &secureClient;
         } else {
@@ -120,17 +135,21 @@ public:
 
         if (httpResponseCode == 201) {
             Serial.println(F("[HTTP] ✅ Telemetry accepted by backend (201 Created)."));
+        } else if (httpResponseCode == 200) {
+            Serial.println(F("[HTTP] ℹ️ Duplicate message already persisted by backend (200 OK duplicate acknowledged)."));
         } else if (httpResponseCode == 409) {
-            Serial.println(F("[HTTP] ℹ️ Duplicate message ID acknowledged by server (409 Conflict)."));
-        } else if (httpResponseCode == 401) {
-            Serial.println(F("[HTTP] ❌ 401 Unauthorized: Invalid device token or revoked status!"));
+            Serial.println(F("[HTTP] ℹ️ Duplicate message conflict acknowledged by server (409 Conflict)."));
+        } else if (httpResponseCode == 401 || httpResponseCode == 403) {
+            Serial.print(F("[HTTP] ❌ Authorization failed (HTTP "));
+            Serial.print(httpResponseCode);
+            Serial.println(F("): Device credential invalid or revoked."));
         } else {
             Serial.print(F("[HTTP] ⚠️ Telemetry transmission error: HTTP "));
             Serial.println(httpResponseCode);
             String respBody = http.getString();
             if (respBody.length() > 0) {
                 Serial.print(F("[HTTP Response] "));
-                Serial.println(respBody.substring(0, 120));
+                Serial.println(respBody.substring(0, 100));
             }
         }
 

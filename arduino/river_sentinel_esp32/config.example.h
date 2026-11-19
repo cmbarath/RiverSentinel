@@ -30,6 +30,34 @@
 #define SCHEMA_VERSION      "2.0"
 
 // ============================================================================
+// 2.1 TRUSTED ROOT CA CERTIFICATE (STRICT TLS VALIDATION)
+// Standard ISRG Root X1 certificate for validating HTTPS endpoints.
+// NEVER use setInsecure() in production.
+// ============================================================================
+static const char ROOT_CA_CERT[] PROGMEM = 
+"-----BEGIN CERTIFICATE-----\n"
+"MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRQB4+/SmAiMwDQYJKoZIhvcNAQELBQAw\n"
+"TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n"
+"cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4\n"
+"WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu\n"
+"ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY\n"
+"MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oQ6HgJhmgCAZGl+8Z\n"
+"nrvTy2dUOocKlq8AqGyqhWHTx24sbIG4ODAnCzmjeZvKDHxIDEGZUQ+/EI5qmpHD\n"
+"3eGMU1Wefe9vdYJaGOVCClGPAbeshN77OXureBoImDG+88sp8JEGpfIA2V57QYTS\n"
+"3g2OiBRWGDfMp+tubSfZELJvtkoUOvCE220Ldt6tAqhhnU59ZFsdTaJW40/Ns4OM\n"
+"GptgJSi+DiDZexPR/INGLD85QnCQKEzyXZWqhKq7DoDGOTeye/tQpGicmgHQXptPY\n"
+"gwFYF682bq87VTNWghstR+cBCgdfgkC6zEQzqORJE5BI5gLLEtQvbpfcSpTmpcVP\n"
+"PamhU9QV80exPXKGAbMt6444oxZ8bIPhBQsnCgHXQFqdBehgOHzcEW8UTZXKePCv\n"
+"GsXYSkTXWGA14gz6EC9UMn3ETcurcvVCdrlh9CQlmV400fZ31/ovVScWD5Sg5bpN\n"
+"V69463qhUUAnKGv29QjA2uhjODAWvgkgMx8zAVCgAvGq5W2qVgnwDNt03nR8GqA1\n"
+"GQhldvdQXOtVoAzM/+Pnmphm6vMq70Cuh11UpLCaOk6uvDYqOT08baMQAXyU69Z3\n"
+"dXlhnD5076EDuiNmBOAZdZLO7qaWBqOvJzlDX6o379mVVC8TQj7UHRMB826Jwxq3\n"
+"ZnU3YVUAO8VvfvZgePr2Pml0Z2OEqJBKhpd7iHNFeORpPprJzKSFuidbMbAFsjZ7\n"
+"41nj8dd35qqit5KsNJKignqGQV25nC9kyvE569YhU3BpSODAZBSc3RJMGenyqpFj\n"
+"bPnWTOH5RzeVJ+qDnUKxu860sJWWtzJKvd8LGLKEBA==\n"
+"-----END CERTIFICATE-----\n";
+
+// ============================================================================
 // 3. NTP TIME SYNCHRONIZATION
 // ============================================================================
 #define NTP_SERVER_PRIMARY  "pool.ntp.org"

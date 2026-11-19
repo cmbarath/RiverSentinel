@@ -270,15 +270,18 @@ def ingest_production_device_telemetry():
             'message': f"observed_at must be valid ISO 8601 UTC: {te}"
         }), 400
 
-    # 4. Duplicate Message Protection (Idempotency)
+    # 4. Duplicate Message Protection (Idempotent Retry Contract)
     existing = supabase_get('sensor_readings', filters={'device_message_id': f'eq.{message_id}'}, limit=1)
     if existing and isinstance(existing, list) and len(existing) > 0:
+        original = existing[0]
         return jsonify({
-            'status': 'conflict',
-            'error_code': 'DUPLICATE_MESSAGE',
+            'status': 'success',
+            'duplicate': True,
             'message': f"Message {message_id} was already processed and persisted.",
-            'persisted_at': existing[0].get('created_at')
-        }), 409
+            'reading_id': original.get('id'),
+            'persisted_at': original.get('created_at'),
+            'quality_status': original.get('quality_status', 'valid')
+        }), 200
 
     # 5. Extract Sensor Measurements & Sensor Status
     sensors = data.get('sensor_readings')
@@ -294,24 +297,59 @@ def ingest_production_device_telemetry():
 
     def parse_measurement(key: str, min_val: float, max_val: float):
         nonlocal overall_quality
-        status = sensor_status.get(key, 'valid')
-        if status in ('disconnected', 'missing', 'failed'):
-            overall_quality = 'degraded' if overall_quality == 'valid' else overall_quality
-            return None, status
-        
+        raw_status = sensor_status.get(key, 'valid')
+
+        # Normalize status fields
+        conn_status = 'connected'
+        cal_status = 'calibrated'
+        if isinstance(raw_status, dict):
+            conn_status = raw_status.get('connection_status', raw_status.get('connection', 'connected'))
+            cal_status = raw_status.get('calibration_status', raw_status.get('calibration', 'calibrated'))
+        elif isinstance(raw_status, str):
+            st = raw_status.lower().strip()
+            if st in ('not_configured', 'unconfigured'):
+                conn_status = 'not_configured'
+            elif st in ('disconnected', 'failed', 'missing'):
+                conn_status = st
+            elif st in ('uncalibrated', 'factory_default'):
+                cal_status = st
+            elif st == 'out_of_range':
+                pass
+
+        # Check connection status
+        if conn_status == 'not_configured':
+            return None, 'not_configured'
+        if conn_status in ('disconnected', 'missing', 'failed'):
+            if overall_quality in ('valid', 'provisional'):
+                overall_quality = 'degraded'
+            return None, conn_status
+
         val = sensors.get(key)
         if val is None:
+            # If sensor is completely omitted from both readings and status, it is not configured on this node
+            if key not in sensor_status and key not in sensors:
+                return None, 'not_configured'
+            if overall_quality in ('valid', 'provisional'):
+                overall_quality = 'degraded'
             return None, 'missing'
-        
+
         try:
             val_f = float(val)
         except (ValueError, TypeError):
-            overall_quality = 'suspect'
+            if overall_quality in ('valid', 'provisional'):
+                overall_quality = 'degraded'
             return None, 'invalid_type'
 
+        # Physical range validation
         if val_f < min_val or val_f > max_val:
             overall_quality = 'out_of_range'
             return val_f, 'out_of_range'
+
+        # Calibration integrity check: in-range reading from uncalibrated sensor cannot be marked 'valid'
+        if cal_status in ('uncalibrated', 'factory_default'):
+            if overall_quality == 'valid':
+                overall_quality = 'provisional'
+            return round(val_f, 2), cal_status
 
         return round(val_f, 2), 'valid'
 

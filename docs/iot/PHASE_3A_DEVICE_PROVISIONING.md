@@ -52,7 +52,7 @@ Lifecycle State: provisioned
 Credential Hash: a9f1ec52c7b5f928e815...
 -----------------------------------------------------------------
 ⚠️  ONE-TIME PRE-SHARED KEY (STORE IN ESP32 config.h NOW):
-   DEVICE_TOKEN = rs_dev_9f8e7d6c5b4a3120ef890123456789abcdef0123456789ab
+   DEVICE_TOKEN = rs_dev_************************************************
 -----------------------------------------------------------------
 This secret will NEVER be displayed again or stored in plaintext.
 =================================================================

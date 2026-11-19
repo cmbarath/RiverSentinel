@@ -14,6 +14,7 @@ import re
 import uuid
 import argparse
 import sys
+import getpass
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
@@ -78,8 +79,9 @@ class SerialBridge:
 
         try:
             res = requests.post(url, headers=headers, json=payload, timeout=5)
-            if res.status_code == 201:
-                print(f"🚀 [PRODUCTION HTTP 201] Telemetry ingested for {self.device_code} | Seq={self.sequence_number-1} | Readings={sensor_readings}")
+            if res.status_code in (200, 201):
+                ack_type = "Created (201)" if res.status_code == 201 else "Duplicate Acknowledged (200)"
+                print(f"🚀 [PRODUCTION HTTP {res.status_code}] Telemetry {ack_type} for {self.device_code} | Seq={self.sequence_number-1} | Readings={sensor_readings}")
                 return True
             else:
                 print(f"❌ [HTTP {res.status_code}] Ingestion failed: {res.text[:120]}")
@@ -149,9 +151,10 @@ class SerialBridge:
         return "IGNORED", None
 
     def start(self):
+        token_info = "[Token: Configured (masked)]" if self.device_token else "[Token: UNSET / NONE]"
         print(f"\n📡 Opening Serial Port {self.port} at {self.baud} baud...")
         print(f"   Mode: {'Simulated Ingestion' if self.simulate_mode else 'Physical Device Ingestion'}")
-        print(f"   Target: {self.device_code if not self.simulate_mode else 'Telemetry Simulator'}")
+        print(f"   Target: {self.device_code if not self.simulate_mode else 'Telemetry Simulator'} {token_info}")
 
         try:
             ser = serial.Serial(self.port, self.baud, timeout=1)
@@ -217,9 +220,39 @@ def main():
     parser.add_argument('--port', help="Serial port (e.g. COM3 or /dev/ttyUSB0)")
     parser.add_argument('--baud', type=int, default=115200, help="Baud rate (default: 115200)")
     parser.add_argument('--device-code', default="DEV-ESP32-ASSI-01", help="Target device code")
-    parser.add_argument('--device-token', default="", help="Device pre-shared key token")
+    parser.add_argument('--device-token', default="", help="Device pre-shared key token (deprecated CLI flag; prefer env var or prompt)")
+    parser.add_argument('--token-file', help="Path to secure file containing the device token")
     parser.add_argument('--simulate', action='store_true', help="Route to simulator endpoint instead of production ingest")
     args = parser.parse_args()
+
+    # Credential Resolution Order:
+    # 1. RIVER_SENTINEL_DEVICE_TOKEN environment variable
+    # 2. --token-file <path>
+    # 3. Interactive hidden password prompt via getpass
+    # 4. --device-token CLI argument (with security warning)
+    device_token = ""
+    if not args.simulate:
+        if os.getenv('RIVER_SENTINEL_DEVICE_TOKEN'):
+            device_token = os.getenv('RIVER_SENTINEL_DEVICE_TOKEN').strip()
+        elif args.token_file:
+            if os.path.exists(args.token_file):
+                with open(args.token_file, 'r', encoding='utf-8') as tf:
+                    device_token = tf.read().strip()
+            else:
+                print(f"❌ Error: Specified --token-file '{args.token_file}' does not exist.")
+                sys.exit(1)
+        elif args.device_token:
+            print("⚠️ [Security Warning] Passing device credentials via command-line arguments is visible in process lists. Prefer RIVER_SENTINEL_DEVICE_TOKEN environment variable or interactive prompt.")
+            device_token = args.device_token.strip()
+        elif sys.stdin.isatty():
+            try:
+                device_token = getpass.getpass(f"🔐 Enter Device Pre-Shared Key for {args.device_code} (input hidden): ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\nOperation cancelled.")
+                sys.exit(1)
+
+        if not device_token:
+            print("⚠️ Warning: No device token provided. Physical telemetry ingestion may be rejected (HTTP 401).")
 
     port = args.port or find_arduino_port()
     if not port:
@@ -230,7 +263,7 @@ def main():
         port=port,
         baud=args.baud,
         device_code=args.device_code,
-        device_token=args.device_token,
+        device_token=device_token,
         simulate_mode=args.simulate
     )
     bridge.start()

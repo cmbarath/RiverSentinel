@@ -109,13 +109,15 @@ The server verifies the token against the device's stored SHA-256 digest in `pub
 }
 ```
 
-### Duplicate Message (HTTP 409 Conflict)
+### Duplicate Message Acknowledged (HTTP 200 OK)
 ```json
 {
-  "status": "conflict",
-  "error_code": "DUPLICATE_MESSAGE",
+  "status": "success",
+  "duplicate": true,
   "message": "Message a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d was already processed and persisted.",
-  "persisted_at": "2026-11-19T07:15:30.852Z"
+  "reading_id": "550e8400-e29b-41d4-a716-446655440000",
+  "persisted_at": "2026-11-19T07:15:30.852Z",
+  "quality_status": "valid"
 }
 ```
 

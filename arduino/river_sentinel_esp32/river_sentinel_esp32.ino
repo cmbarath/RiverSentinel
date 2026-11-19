@@ -33,7 +33,7 @@ DeviceAuth deviceAuth(DEVICE_CODE, DEVICE_TOKEN);
 DeviceStatus deviceStatus(PIN_BATTERY_ADC);
 OfflineQueue offlineQueue(OFFLINE_QUEUE_CAPACITY);
 SensorManager sensorManager;
-TelemetryClient telemetryClient(BACKEND_HOST, BACKEND_PORT, USE_TLS, INGEST_ENDPOINT, deviceAuth);
+TelemetryClient telemetryClient(BACKEND_HOST, BACKEND_PORT, USE_TLS, INGEST_ENDPOINT, deviceAuth, ROOT_CA_CERT);
 
 unsigned long lastSampleTime = 0;
 unsigned long sequenceCounter = 1;
@@ -47,13 +47,13 @@ String generateMessageUUID() {
     uint32_t r4 = esp_random();
 
     snprintf(uuidStr, sizeof(uuidStr),
-             "%08x-%04x-4%03x-%02x%02x-%08x%04x",
-             r1,
+             "%08lx-%04x-4%03x-%02x%02x-%08lx%04x",
+             (unsigned long)r1,
              (uint16_t)(r2 >> 16),
              (uint16_t)(r2 & 0x0FFF),
              (uint8_t)((r3 >> 24) & 0x3F) | 0x80, // variant RFC 4122
              (uint8_t)((r3 >> 16) & 0xFF),
-             r3,
+             (unsigned long)r3,
              (uint16_t)r4);
     return String(uuidStr);
 }
@@ -133,10 +133,11 @@ void loop() {
                     Serial.print(F("[Queue] Transmitting buffered message: "));
                     Serial.println(qMsg.messageId);
                     int res = telemetryClient.sendTelemetry(qMsg.jsonPayload);
-                    if (res == 201 || res == 409) {
+                    bool isAck = (res == 201 || res == 200 || res == 409);
+                    if (isAck) {
                         offlineQueue.dequeue();
                     } else {
-                        Serial.println(F("[Queue] Buffered transmit failed. Retaining queue."));
+                        Serial.println(F("[Queue] Buffered transmit failed. Retaining queue for retry."));
                         break;
                     }
                 }
@@ -144,8 +145,9 @@ void loop() {
 
             // Transmit current message
             int res = telemetryClient.sendTelemetry(payload);
-            if (res != 201 && res != 409) {
-                // Buffer to offline queue if server error
+            bool isAck = (res == 201 || res == 200 || res == 409);
+            if (!isAck) {
+                // Buffer to offline queue if server error or network dropout
                 Serial.println(F("[System] Live send failed. Enqueueing to offline buffer."));
                 offlineQueue.enqueue(msgId, sequenceCounter, payload);
             }

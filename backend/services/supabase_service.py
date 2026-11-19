@@ -8,6 +8,15 @@ import requests
 import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Ensure backend/.env is reliably loaded even when invoked standalone
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_env_path = os.path.join(_backend_dir, '.env')
+if os.path.exists(_env_path):
+    load_dotenv(_env_path)
+else:
+    load_dotenv()
 
 # Load environment
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').rstrip('/')

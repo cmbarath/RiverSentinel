@@ -122,15 +122,41 @@ def create_monitoring_station():
 # 3. IOT DEVICES MANAGEMENT ENDPOINTS
 # ============================================================================
 
+def _compute_device_lifecycle(device: dict) -> str:
+    """Compute active/offline state without fabricating physical connectivity."""
+    status = device.get('status', 'provisioned')
+    if status in ('revoked', 'maintenance', 'inactive', 'registered', 'awaiting_installation'):
+        return status
+    last_seen = device.get('last_seen_at')
+    if not last_seen:
+        return 'provisioned'  # Provisioned with credentials, awaiting initial physical telemetry
+    try:
+        last_dt = datetime.fromisoformat(str(last_seen).replace('Z', '+00:00'))
+        # Active telemetry window: 15 minutes (900 seconds)
+        if (datetime.now(timezone.utc) - last_dt).total_seconds() <= 900:
+            return 'online'
+        return 'offline'
+    except Exception:
+        return 'offline'
+
+
 @authority_bp.route('/api/devices', methods=['GET'])
 @require_role('authority_admin', 'field_officer')
 def list_devices():
     """List registered IoT devices (Authority Admin & Field Officers only)."""
     devices = supabase_get('devices', order='device_code.asc')
+    sanitized = []
+    for d in (devices or []):
+        dev_copy = dict(d)
+        # Never leak credential hash over API
+        dev_copy.pop('credential_hash', None)
+        dev_copy['display_status'] = _compute_device_lifecycle(d)
+        sanitized.append(dev_copy)
+
     return jsonify({
         'status': 'success',
-        'count': len(devices) if devices else 0,
-        'devices': devices or []
+        'count': len(sanitized),
+        'devices': sanitized
     })
 
 
@@ -147,26 +173,36 @@ def register_device():
     if not device_code or not device_name or not raw_token:
         return jsonify({'error': 'Bad Request', 'message': 'Missing required fields: device_code, device_name, token'}), 400
 
-    # Store SHA-256 hash of the device pre-shared token
-    token_hash = hashlib.sha256(raw_token.strip().encode('utf-8')).hexdigest()
+    from services.device_auth_service import hash_device_token, is_valid_token_format
+    if not is_valid_token_format(raw_token):
+        return jsonify({
+            'error': 'Bad Request',
+            'message': 'Token format invalid. Must begin with rs_dev_ and contain 24 random bytes (48 hex chars).'
+        }), 400
+
+    token_hash = hash_device_token(raw_token)
 
     new_device = {
         'device_code': device_code.strip(),
         'device_name': device_name.strip(),
         'station_id': station_id if station_id else None,
         'device_type': data.get('device_type', 'ESP32-WROOM-32'),
-        'firmware_version': data.get('firmware_version', 'v1.0.0'),
+        'firmware_version': data.get('firmware_version', 'v2.0.0-phase3a'),
         'credential_hash': token_hash,
-        'status': 'active',
-        'battery_level_pct': 100.0
+        'status': data.get('status', 'provisioned'),
+        'battery_level_pct': None,
+        'last_seen_at': None
     }
 
     res = supabase_insert('devices', new_device)
     if res:
+        dev_out = dict(res[0])
+        dev_out.pop('credential_hash', None)
+        dev_out['display_status'] = 'provisioned'
         return jsonify({
             'status': 'success',
             'message': 'IoT Device registered successfully',
-            'device': res[0]
+            'device': dev_out
         }), 201
     return jsonify({'error': 'Internal Server Error', 'message': 'Failed to register device'}), 500
 
