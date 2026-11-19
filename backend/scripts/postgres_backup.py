@@ -143,6 +143,68 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
         
         sql_lines.append(f"CREATE SCHEMA IF NOT EXISTS {schema_name};\n")
 
+        # Platform stubs for standalone PostgreSQL recovery (ensures FKs to auth.users resolve)
+        sql_lines.append("-- Platform stubs for standalone PostgreSQL recovery (ensures FKs to auth.users resolve)")
+        sql_lines.append("CREATE SCHEMA IF NOT EXISTS auth;")
+        sql_lines.append("""CREATE TABLE IF NOT EXISTS auth.users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'authenticated',
+    raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);""")
+        sql_lines.append("""INSERT INTO auth.users (id, email, role, raw_user_meta_data, created_at, updated_at)
+VALUES ('1d72d7d3-7c41-4cc9-be26-74e7164c9636', 'test_admin_p5@riversentinel.test', 'authenticated', '{"full_name": "Test Admin"}'::jsonb, now(), now())
+ON CONFLICT (id) DO NOTHING;\n""")
+        sql_lines.append("""CREATE OR REPLACE FUNCTION auth.uid()
+RETURNS uuid LANGUAGE sql STABLE AS $func$
+  SELECT coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid;
+$func$;\n""")
+        sql_lines.append("""CREATE OR REPLACE FUNCTION auth.role()
+RETURNS text LANGUAGE sql STABLE AS $func$
+  SELECT coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )::text;
+$func$;\n""")
+        sql_lines.append("CREATE SCHEMA IF NOT EXISTS storage;")
+        sql_lines.append("""CREATE TABLE IF NOT EXISTS storage.buckets (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    public BOOLEAN DEFAULT false,
+    file_size_limit BIGINT,
+    allowed_mime_types TEXT[]
+);""")
+        sql_lines.append("""INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('pollution-evidence', 'pollution-evidence', false, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp']::text[])
+ON CONFLICT (id) DO NOTHING;\n""")
+
+        # 0. Extract Functions in Schema (Must precede table creation so RLS policies can reference get_my_role)
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append(f"-- FUNCTIONS IN {schema_name}")
+        sql_lines.append("-- ===========================================================================\n")
+        func_query = """
+            SELECT proname, pg_get_functiondef(oid) 
+            FROM pg_proc 
+            WHERE pronamespace = 'public'::regnamespace;
+        """
+        manifest['functions'] = []
+        try:
+            funcs = con.run(func_query)
+            for f_name, f_def in funcs:
+                manifest['functions'].append(f_name)
+                clean_fdef = f_def
+                if target_schema_override:
+                    clean_fdef = clean_fdef.replace('FUNCTION public.', f'FUNCTION {target_schema_override}.')
+                    clean_fdef = clean_fdef.replace("'public'", f"'{target_schema_override}'")
+                sql_lines.append(f"{clean_fdef};\n")
+        except Exception:
+            pass
+
         # 1. Query Auth Users count
         try:
             auth_rows = con.run("SELECT count(*) FROM auth.users;")
@@ -160,15 +222,20 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
         except Exception:
             pass
 
-        # 3. Export Tables (Schema, Constraints, Rows, Indexes, RLS)
+        # 3. Export Tables (Collected in passes to ensure all tables exist before RLS policies)
         total_rows = 0
+        table_schemas = []
+        table_constraints = []
+        table_data = []
+        table_indexes = []
+        table_policies = []
 
         for table in TABLES_INVENTORY:
             print(f"  Exporting table structure and data: public.{table}...")
 
             # A. Extract Column Definitions
             col_query = f"""
-                SELECT column_name, udt_name, is_nullable, column_default, character_maximum_length
+                SELECT column_name, udt_name, is_nullable, column_default, character_maximum_length, is_identity, identity_generation
                 FROM information_schema.columns
                 WHERE table_schema = 'public' AND table_name = '{table}'
                 ORDER BY ordinal_position;
@@ -180,8 +247,11 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
             col_defs = []
             col_names = []
             col_udts = []
+            identity_cols = []
             for c in cols:
                 c_name, c_type, is_null, c_def, c_len = c[0], c[1], c[2], c[3], c[4]
+                is_ident = c[5] if len(c) > 5 else 'NO'
+                ident_gen = c[6] if len(c) > 6 else 'BY DEFAULT'
                 col_names.append(c_name)
                 col_udts.append(c_type)
                 
@@ -219,17 +289,17 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
                 parts = [f'"{c_name}" {type_str}']
                 if is_null == 'NO':
                     parts.append("NOT NULL")
-                if c_def is not None:
-                    # Clean up schema prefixes in defaults if targeting override schema
+                if is_ident == 'YES':
+                    parts.append(f"GENERATED {ident_gen or 'BY DEFAULT'} AS IDENTITY")
+                    identity_cols.append(c_name)
+                elif c_def is not None:
                     clean_def = c_def
                     if target_schema_override:
                         clean_def = clean_def.replace('public.', f'{target_schema_override}.')
                     parts.append(f"DEFAULT {clean_def}")
                 col_defs.append(" ".join(parts))
 
-            # Table DDL
-            sql_lines.append(f"-- Table: {schema_name}.{table}")
-            sql_lines.append(f"CREATE TABLE IF NOT EXISTS {schema_name}.\"{table}\" (\n    " + ",\n    ".join(col_defs) + "\n);\n")
+            table_schemas.append((table, col_defs))
 
             # B. Extract Primary Key and Unique Constraints
             pk_query = f"""
@@ -238,14 +308,14 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
                 WHERE conrelid = 'public."{table}"'::regclass
                   AND contype IN ('p', 'u');
             """
+            c_list = []
             try:
                 constraints = con.run(pk_query)
                 for con_name, con_def in constraints:
-                    # Rename constraint slightly if needed to prevent global collisions
-                    sql_lines.append(f"ALTER TABLE {schema_name}.\"{table}\" DROP CONSTRAINT IF EXISTS \"{con_name}\";")
-                    sql_lines.append(f"ALTER TABLE {schema_name}.\"{table}\" ADD CONSTRAINT \"{con_name}\" {con_def};\n")
-            except Exception as ce:
+                    c_list.append((con_name, con_def))
+            except Exception:
                 pass
+            table_constraints.append((table, c_list))
 
             # C. Extract Data Rows
             data_query = f'SELECT * FROM public."{table}";'
@@ -253,14 +323,7 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
             row_count = len(rows)
             total_rows += row_count
             manifest['tables'][table] = {'columns': col_names, 'row_count': row_count}
-
-            if rows:
-                cols_joined = ", ".join([f'"{cn}"' for cn in col_names])
-                sql_lines.append(f"-- Data: {schema_name}.{table} ({row_count} rows)")
-                for r in rows:
-                    vals_joined = ", ".join([_format_sql_literal(v, col_udts[idx]) for idx, v in enumerate(r)])
-                    sql_lines.append(f"INSERT INTO {schema_name}.\"{table}\" ({cols_joined}) VALUES ({vals_joined}) ON CONFLICT DO NOTHING;")
-                sql_lines.append("")
+            table_data.append((table, col_names, col_udts, rows, identity_cols))
 
             # D. Extract Indexes
             idx_query = f"""
@@ -269,25 +332,25 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
                 WHERE schemaname = 'public' AND tablename = '{table}'
                   AND indexname NOT LIKE '%_pkey' AND indexname NOT LIKE '%_key';
             """
+            idx_list = []
             try:
                 indexes = con.run(idx_query)
                 for idx_name, idx_def in indexes:
                     clean_def = idx_def.replace(' ON public.', f' ON {schema_name}.')
                     clean_def = clean_def.replace('CREATE INDEX ', 'CREATE INDEX IF NOT EXISTS ')
                     clean_def = clean_def.replace('CREATE UNIQUE INDEX ', 'CREATE UNIQUE INDEX IF NOT EXISTS ')
-                    sql_lines.append(f"{clean_def};")
-                if indexes:
-                    sql_lines.append("")
+                    idx_list.append(clean_def)
             except Exception:
                 pass
+            table_indexes.append((table, idx_list))
 
             # E. Extract RLS Policies
-            sql_lines.append(f"ALTER TABLE {schema_name}.\"{table}\" ENABLE ROW LEVEL SECURITY;")
             pol_query = f"""
                 SELECT policyname, roles, cmd, qual, with_check
                 FROM pg_policies
                 WHERE schemaname = 'public' AND tablename = '{table}';
             """
+            pol_list = []
             try:
                 policies = con.run(pol_query)
                 for p in policies:
@@ -298,13 +361,64 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
                         pol_stmt.append(f"USING ({qual})")
                     if with_chk:
                         pol_stmt.append(f"WITH CHECK ({with_chk})")
-                    
-                    sql_lines.append(f"DROP POLICY IF EXISTS \"{p_name}\" ON {schema_name}.\"{table}\";")
-                    sql_lines.append(" ".join(pol_stmt) + ";")
-                if policies:
-                    sql_lines.append("")
+                    pol_list.append((p_name, " ".join(pol_stmt)))
             except Exception:
                 pass
+            table_policies.append((table, pol_list))
+
+        # Phase A: All Table Schemas
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append(f"-- TABLE SCHEMAS (CREATE TABLE)")
+        sql_lines.append("-- ===========================================================================\n")
+        for table, col_defs in table_schemas:
+            sql_lines.append(f"-- Table: {schema_name}.{table}")
+            sql_lines.append(f"CREATE TABLE IF NOT EXISTS {schema_name}.\"{table}\" (\n    " + ",\n    ".join(col_defs) + "\n);\n")
+
+        # Phase B: Primary Key & Unique Constraints
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append(f"-- PRIMARY KEY & UNIQUE CONSTRAINTS")
+        sql_lines.append("-- ===========================================================================\n")
+        for table, c_list in table_constraints:
+            for con_name, con_def in c_list:
+                sql_lines.append(f"ALTER TABLE {schema_name}.\"{table}\" DROP CONSTRAINT IF EXISTS \"{con_name}\";")
+                sql_lines.append(f"ALTER TABLE {schema_name}.\"{table}\" ADD CONSTRAINT \"{con_name}\" {con_def};\n")
+
+        # Phase C: Ingest Data & Advance Identity Sequences
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append(f"-- DATA INGESTION")
+        sql_lines.append("-- ===========================================================================\n")
+        for table, col_names, col_udts, rows, identity_cols in table_data:
+            if rows:
+                cols_joined = ", ".join([f'"{cn}"' for cn in col_names])
+                sql_lines.append(f"-- Data: {schema_name}.{table} ({len(rows)} rows)")
+                for r in rows:
+                    vals_joined = ", ".join([_format_sql_literal(v, col_udts[idx]) for idx, v in enumerate(r)])
+                    sql_lines.append(f"INSERT INTO {schema_name}.\"{table}\" ({cols_joined}) VALUES ({vals_joined}) ON CONFLICT DO NOTHING;")
+                for id_col in identity_cols:
+                    sql_lines.append(f"SELECT setval(pg_get_serial_sequence('{schema_name}.\"{table}\"', '{id_col}'), COALESCE((SELECT max(\"{id_col}\") FROM {schema_name}.\"{table}\"), 1));")
+                sql_lines.append("")
+
+        # Phase D: Secondary Indexes
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append(f"-- SECONDARY INDEXES")
+        sql_lines.append("-- ===========================================================================\n")
+        for table, idx_list in table_indexes:
+            for clean_def in idx_list:
+                sql_lines.append(f"{clean_def};")
+            if idx_list:
+                sql_lines.append("")
+
+        # Phase E: Row Level Security & Policies (All tables exist so cross-table policies resolve)
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append(f"-- ROW LEVEL SECURITY & POLICIES")
+        sql_lines.append("-- ===========================================================================\n")
+        for table, pol_list in table_policies:
+            sql_lines.append(f"ALTER TABLE {schema_name}.\"{table}\" ENABLE ROW LEVEL SECURITY;")
+            for p_name, pol_stmt in pol_list:
+                sql_lines.append(f"DROP POLICY IF EXISTS \"{p_name}\" ON {schema_name}.\"{table}\";")
+                sql_lines.append(pol_stmt + ";")
+            if pol_list:
+                sql_lines.append("")
 
         # 4. Extract Foreign Key Constraints
         sql_lines.append("-- ===========================================================================")
@@ -345,6 +459,53 @@ def generate_postgres_backup(target_schema_override: Optional[str] = None) -> Tu
                 sql_lines.append(f"CREATE OR REPLACE VIEW {schema_name}.\"{v_name}\" AS\n{clean_def};\n")
         except Exception:
             pass
+
+        # 7. Extract Triggers
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append("-- TRIGGERS")
+        sql_lines.append("-- ===========================================================================\n")
+        trig_query = """
+            SELECT tgname, relname, pg_get_triggerdef(pg_trigger.oid)
+            FROM pg_trigger 
+            JOIN pg_class ON pg_trigger.tgrelid = pg_class.oid 
+            JOIN pg_proc ON pg_trigger.tgfoid = pg_proc.oid
+            WHERE pg_trigger.tgisinternal = false
+              AND (pg_proc.pronamespace = 'public'::regnamespace OR pg_class.relnamespace = 'public'::regnamespace);
+        """
+        manifest['triggers'] = []
+        try:
+            trigs = con.run(trig_query)
+            for tg_name, tbl_name, tg_def in trigs:
+                manifest['triggers'].append({'trigger': tg_name, 'table': tbl_name})
+                clean_tg = tg_def
+                if target_schema_override:
+                    clean_tg = clean_tg.replace('FUNCTION handle_new_user()', f'FUNCTION {target_schema_override}.handle_new_user()')
+                    clean_tg = clean_tg.replace('ON public.', f'ON {target_schema_override}.')
+                sql_lines.append(f"DROP TRIGGER IF EXISTS \"{tg_name}\" ON auth.users;")
+                sql_lines.append(f"{clean_tg};\n")
+        except Exception:
+            pass
+
+        # 8. Extract Table & Function Grants
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append("-- ROLE GRANTS & PERMISSIONS")
+        sql_lines.append("-- ===========================================================================\n")
+        for table in TABLES_INVENTORY:
+            sql_lines.append(f"GRANT ALL ON TABLE {schema_name}.\"{table}\" TO anon, authenticated, service_role;")
+        sql_lines.append(f"GRANT ALL ON ALL SEQUENCES IN SCHEMA {schema_name} TO anon, authenticated, service_role;")
+        sql_lines.append(f"GRANT ALL ON ALL ROUTINES IN SCHEMA {schema_name} TO anon, authenticated, service_role;\n")
+
+        # 9. Schema Migrations Ledger
+        sql_lines.append("-- ===========================================================================")
+        sql_lines.append("-- SCHEMA MIGRATION LEDGER")
+        sql_lines.append("-- ===========================================================================\n")
+        sql_lines.append(f"""CREATE TABLE IF NOT EXISTS {schema_name}."_schema_migrations" (
+    "version" VARCHAR(100) PRIMARY KEY,
+    "applied_at" TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);\n""")
+        for mig in manifest['migrations_applied']:
+            sql_lines.append(f"INSERT INTO {schema_name}.\"_schema_migrations\" (\"version\") VALUES ('{mig}') ON CONFLICT DO NOTHING;")
+        sql_lines.append("")
 
     finally:
         con.close()

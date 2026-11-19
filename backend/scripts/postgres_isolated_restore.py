@@ -26,11 +26,13 @@ ISOLATED_SCHEMA = "isolated_restore_test"
 
 
 def split_sql_statements(sql: str) -> List[str]:
-    """Split SQL script into statements respecting single and double quoted string literals."""
+    """Split SQL script into statements respecting single quotes, double quotes, and PostgreSQL dollar quotes."""
     statements = []
     current = []
     in_quote = False
     quote_char = None
+    in_dollar_quote = False
+    dollar_tag = None
     i = 0
     n = len(sql)
     while i < n:
@@ -45,7 +47,25 @@ def split_sql_statements(sql: str) -> List[str]:
                 else:
                     in_quote = False
             current.append(c)
+        elif in_dollar_quote:
+            if c == '$' and sql[i:].startswith(dollar_tag):
+                current.append(dollar_tag)
+                i += len(dollar_tag)
+                in_dollar_quote = False
+                continue
+            current.append(c)
         else:
+            if c == '$':
+                next_dollar = sql.find('$', i + 1)
+                if next_dollar != -1 and (next_dollar - i) <= 30:
+                    candidate = sql[i:next_dollar + 1]
+                    inner = candidate[1:-1]
+                    if all(ch.isalnum() or ch == '_' for ch in inner):
+                        in_dollar_quote = True
+                        dollar_tag = candidate
+                        current.append(dollar_tag)
+                        i += len(dollar_tag)
+                        continue
             if c in ("'", '"'):
                 in_quote = True
                 quote_char = c
