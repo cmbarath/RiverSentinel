@@ -24,6 +24,7 @@ from routes.sensors import sensors_bp
 from routes.predictions import predictions_bp
 from routes.ai import ai_bp
 from routes.authority import authority_bp
+from routes.stations_v1 import stations_v1_bp
 
 START_TIME = time.time()
 
@@ -38,6 +39,7 @@ def create_app():
     app.register_blueprint(predictions_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(authority_bp)
+    app.register_blueprint(stations_v1_bp)
 
     @app.route('/')
     def index():

@@ -39,7 +39,7 @@ const InteractiveMap = () => {
     useEffect(() => {
         setIsClient(true);
         // Fetch real monitoring stations from River Sentinel backend API
-        fetch(`${backendUrl}/api/stations`)
+        fetch(`${backendUrl}/api/v1/stations`)
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success' && Array.isArray(data.stations) && data.stations.length > 0) {

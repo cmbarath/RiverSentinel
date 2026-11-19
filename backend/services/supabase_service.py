@@ -24,6 +24,30 @@ SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_KEY')
 
 
+def get_db_connection():
+    """Establish direct SSL connection to Supabase PostgreSQL database."""
+    import pg8000.native
+    return pg8000.native.Connection(
+        user=os.getenv('SUPABASE_DB_USER', 'postgres'),
+        host=os.getenv('SUPABASE_DB_HOST'),
+        port=int(os.getenv('SUPABASE_DB_PORT', 5432)),
+        password=os.getenv('SUPABASE_DB_PASSWORD'),
+        database=os.getenv('SUPABASE_DB_NAME', 'postgres'),
+        ssl_context=True
+    )
+
+
+def execute_sql(query: str, params: Optional[Dict[str, Any]] = None) -> List[List[Any]]:
+    """Execute parameterized SQL query directly on the PostgreSQL database."""
+    con = get_db_connection()
+    try:
+        if params:
+            return con.run(query, **params)
+        return con.run(query)
+    finally:
+        con.close()
+
+
 def get_headers(use_service_role: bool = True) -> Optional[Dict[str, str]]:
     """Generate authenticated headers for Supabase PostgREST API."""
     key = (SUPABASE_SERVICE_KEY if use_service_role else None) or SUPABASE_ANON_KEY
@@ -37,67 +61,82 @@ def get_headers(use_service_role: bool = True) -> Optional[Dict[str, str]]:
 
 
 def supabase_insert(table_name: str, record: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
-    """Insert a record into a Supabase table using server-side service role."""
+    """Insert a record into a Supabase table using server-side service role with retry."""
     if not SUPABASE_URL:
         return None
     headers = get_headers(use_service_role=True)
     if not headers:
         return None
-    try:
-        url = f"{SUPABASE_URL}/rest/v1/{table_name}"
-        post_headers = {**headers, 'Prefer': 'return=representation'}
-        res = requests.post(url, headers=post_headers, json=record, timeout=4.0)
-        if res.status_code in (200, 201):
-            return res.json()
-        print(f"[ERROR] Supabase insert to {table_name} returned {res.status_code}: {res.text[:200]}")
-    except Exception as e:
-        print(f"[ERROR] Supabase insert exception ({table_name}): {e}")
+    url = f"{SUPABASE_URL}/rest/v1/{table_name}"
+    post_headers = {**headers, 'Prefer': 'return=representation'}
+
+    for attempt in range(3):
+        try:
+            res = requests.post(url, headers=post_headers, json=record, timeout=5.0)
+            if res.status_code in (200, 201):
+                return res.json()
+            print(f"[ERROR] Supabase insert to {table_name} returned {res.status_code}: {res.text[:200]}")
+            return None
+        except Exception as e:
+            if attempt == 2:
+                print(f"[ERROR] Supabase insert exception ({table_name}): {e}")
+            time.sleep(0.2)
     return None
 
 
 def supabase_get(table_name: str, select: str = "*", order: Optional[str] = None,
                  limit: Optional[int] = None, filters: Optional[Dict[str, str]] = None) -> Optional[List[Dict[str, Any]]]:
-    """Query records from a Supabase table."""
+    """Query records from a Supabase table with retry on transient SSL/network drops."""
     if not SUPABASE_URL:
         return None
     headers = get_headers(use_service_role=True)
     if not headers:
         return None
-    try:
-        query_parts = [f"select={select}"]
-        if order:
-            query_parts.append(f"order={order}")
-        if limit:
-            query_parts.append(f"limit={limit}")
-        if filters:
-            for col, condition in filters.items():
-                query_parts.append(f"{col}={condition}")
-        
-        query_str = "&".join(query_parts)
-        url = f"{SUPABASE_URL}/rest/v1/{table_name}?{query_str}"
-        res = requests.get(url, headers=headers, timeout=3.0)
-        if res.status_code == 200:
-            return res.json()
-        print(f"[ERROR] Supabase query on {table_name} returned {res.status_code}: {res.text[:200]}")
-    except Exception as e:
-        print(f"[ERROR] Supabase query exception ({table_name}): {e}")
+
+    query_parts = [f"select={select}"]
+    if order:
+        query_parts.append(f"order={order}")
+    if limit:
+        query_parts.append(f"limit={limit}")
+    if filters:
+        for col, condition in filters.items():
+            query_parts.append(f"{col}={condition}")
+
+    query_str = "&".join(query_parts)
+    url = f"{SUPABASE_URL}/rest/v1/{table_name}?{query_str}"
+
+    for attempt in range(3):
+        try:
+            res = requests.get(url, headers=headers, timeout=5.0)
+            if res.status_code == 200:
+                return res.json()
+            print(f"[ERROR] Supabase query on {table_name} returned {res.status_code}: {res.text[:200]}")
+            return None
+        except Exception as e:
+            if attempt == 2:
+                print(f"[ERROR] Supabase query exception ({table_name}): {e}")
+            time.sleep(0.2)
     return None
 
 
 def supabase_update(table_name: str, filter_param: str, record: Dict[str, Any]) -> bool:
-    """Update records in a Supabase table matching the filter_param (e.g. 'id=eq.12')."""
+    """Update records in a Supabase table matching the filter_param with retry."""
     if not SUPABASE_URL:
         return False
     headers = get_headers(use_service_role=True)
     if not headers:
         return False
-    try:
-        url = f"{SUPABASE_URL}/rest/v1/{table_name}?{filter_param}"
-        res = requests.patch(url, headers=headers, json=record, timeout=4.0)
-        return res.status_code in (200, 204)
-    except Exception as e:
-        print(f"[ERROR] Supabase update exception ({table_name}): {e}")
-        return False
+    url = f"{SUPABASE_URL}/rest/v1/{table_name}?{filter_param}"
+
+    for attempt in range(3):
+        try:
+            res = requests.patch(url, headers=headers, json=record, timeout=5.0)
+            return res.status_code in (200, 204)
+        except Exception as e:
+            if attempt == 2:
+                print(f"[ERROR] Supabase update exception ({table_name}): {e}")
+            time.sleep(0.2)
+    return False
 
 
 def get_latest_sensor_reading() -> Optional[Dict[str, Any]]:
