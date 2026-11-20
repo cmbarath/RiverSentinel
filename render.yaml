@@ -14,15 +14,15 @@ services:
       - key: PORT
         value: 10000
       - key: FRONTEND_URL
-        sync: false
+        value: https://river-sentinel.vercel.app
       - key: SUPABASE_URL
-        sync: false
+        value: https://xqzobddgkawysprpmkpk.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
       - key: SUPABASE_DB_HOST
-        sync: false
+        value: db.xqzobddgkawysprpmkpk.supabase.co
       - key: SUPABASE_DB_PORT
         value: 5432
       - key: SUPABASE_DB_NAME
